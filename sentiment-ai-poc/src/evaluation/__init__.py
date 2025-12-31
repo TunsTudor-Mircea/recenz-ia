@@ -1,7 +1,7 @@
 """
 Evaluation module for model performance assessment.
 
-This module provides metrics calculation, visualization, and reporting
+This module provides metrics calculation and visualization
 for sentiment analysis models.
 """
 
@@ -14,7 +14,6 @@ from evaluation.visualizer import (
     plot_feature_importance,
     plot_convergence_curve,
 )
-from evaluation.reporter import generate_report
 
 __all__ = [
     'calculate_metrics',
@@ -24,5 +23,4 @@ __all__ = [
     'plot_precision_recall_curves',
     'plot_feature_importance',
     'plot_convergence_curve',
-    'generate_report',
 ]
