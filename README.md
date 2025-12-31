@@ -106,9 +106,9 @@ MIT License
 
 ```bibtex
 @software{recenz_ia,
-  title={Recenz-IA: High-Performance Romanian Sentiment Analysis},
-  author={Your Name},
+  title={Recenz-IA: Romanian Sentiment Analysis for e-commerce},
+  author={Tudor Tuns},
   year={2025},
-  url={https://github.com/yourusername/recenz-ia}
+  url={https://github.com/TunsTudor-Mircea/recenz-ia}
 }
 ```
