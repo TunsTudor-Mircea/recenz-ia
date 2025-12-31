@@ -1,0 +1,12 @@
+lf_micf:
+  min_df: 5
+  max_df: 0.8
+
+igwo:
+  n_wolves: 10
+  n_iterations: 20
+  inertia_weight: 0.9
+  target_features: 800
+  fitness_cv_folds: 3
+  sample_size: 1000
+  random_state: 42
