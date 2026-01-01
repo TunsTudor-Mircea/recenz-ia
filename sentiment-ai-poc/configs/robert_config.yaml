@@ -1,0 +1,123 @@
+# RoBERT Model Configuration
+# Configuration for Romanian BERT sentiment analysis
+
+model:
+  # Hugging Face model identifier
+  name: "dumitrescustefan/bert-base-romanian-cased-v1"
+
+  # Number of output classes (binary sentiment: negative/positive)
+  num_labels: 2
+
+  # Maximum sequence length (tokens)
+  # Romanian reviews are typically 100-300 tokens
+  # 512 is BERT's maximum, but 256 can speed up training
+  max_length: 512
+
+  # Dropout probability for classification head
+  hidden_dropout_prob: 0.1
+  attention_probs_dropout_prob: 0.1
+
+training:
+  # Training hyperparameters
+  num_train_epochs: 5
+  learning_rate: 2.0e-5
+
+  # Batch sizes (adjust based on GPU memory)
+  # For 8GB GPU: 16 is safe
+  # For 4GB GPU: reduce to 8
+  # For CPU: reduce to 4
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 32
+
+  # Optimizer settings
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  max_grad_norm: 1.0
+
+  # Learning rate scheduler
+  lr_scheduler_type: "linear"
+
+  # Evaluation and checkpointing
+  eval_strategy: "epoch"
+  save_strategy: "epoch"
+  save_total_limit: 2
+  load_best_model_at_end: true
+  metric_for_best_model: "accuracy"
+  greater_is_better: true
+
+  # Early stopping
+  early_stopping_patience: 2
+
+  # Logging
+  logging_strategy: "steps"
+  logging_steps: 50
+
+  # Performance optimizations
+  # FP16 training (mixed precision) - auto-enabled on GPU
+  fp16: auto
+  fp16_opt_level: "O1"
+
+  # Gradient accumulation (effective batch size = batch_size * accumulation_steps)
+  gradient_accumulation_steps: 1
+
+  # Data loading
+  dataloader_num_workers: 4
+  dataloader_pin_memory: true
+
+  # Reproducibility
+  seed: 42
+
+preprocessing:
+  # Minimal preprocessing for RoBERT
+  # Unlike XGBoost, we don't need lemmatization or stemming
+
+  # Remove URLs
+  remove_urls: true
+
+  # Remove HTML tags
+  remove_html: true
+
+  # Normalize whitespace
+  normalize_whitespace: true
+
+  # Keep all text lowercase (RoBERT is cased, but can handle both)
+  lowercase: false
+
+  # Do NOT remove stopwords (RoBERT needs context)
+  remove_stopwords: false
+
+  # Do NOT lemmatize (RoBERT handles word forms internally)
+  lemmatize: false
+
+data:
+  # Dataset configuration
+  dataset_name: "universityofbucharest/laroseda"
+
+  # Train/validation split
+  # If test set exists, use it; otherwise split from train
+  validation_split: 0.2
+
+  # Class mapping for LaRoSeDa
+  # Star ratings 1-2 → 0 (negative)
+  # Star ratings 3-5 → 1 (positive)
+  negative_stars: [1, 2]
+  positive_stars: [3, 4, 5]
+
+  # Text field construction
+  # Combine title and content with space
+  text_fields: ["title", "content"]
+  label_field: "starRating"
+
+output:
+  # Output directory structure
+  results_dir: "results/experiments"
+
+  # Experiment naming
+  experiment_prefix: "robert"
+
+  # Save options
+  save_model: true
+  save_tokenizer: true
+  save_predictions: true
+  save_metrics: true
+  save_plots: true

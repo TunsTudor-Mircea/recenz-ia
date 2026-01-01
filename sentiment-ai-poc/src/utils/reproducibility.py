@@ -11,7 +11,22 @@ import logging
 from typing import Optional
 
 import numpy as np
-import tensorflow as tf
+
+# TensorFlow is optional (only needed for XGBoost GPU acceleration)
+try:
+    import tensorflow as tf
+    TF_AVAILABLE = True
+except ImportError:
+    TF_AVAILABLE = False
+    tf = None
+
+# PyTorch is used by RoBERT
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    torch = None
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +35,7 @@ def set_seed(seed: int = 42) -> None:
     """
     Set random seeds for reproducibility.
 
-    Sets seeds for Python's random module, NumPy, and TensorFlow to ensure
+    Sets seeds for Python's random module, NumPy, TensorFlow, and PyTorch to ensure
     reproducible results across multiple runs.
 
     Args:
@@ -44,9 +59,16 @@ def set_seed(seed: int = 42) -> None:
     np.random.seed(seed)
     logger.debug("Set NumPy random seed")
 
-    # TensorFlow random
-    tf.random.set_seed(seed)
-    logger.debug("Set TensorFlow random seed")
+    # TensorFlow random (if available)
+    if TF_AVAILABLE and tf is not None:
+        tf.random.set_seed(seed)
+        logger.debug("Set TensorFlow random seed")
+
+    # PyTorch random (if available)
+    if TORCH_AVAILABLE and torch is not None:
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        logger.debug("Set PyTorch random seed")
 
     logger.info("Random seeds set successfully")
 
@@ -55,7 +77,7 @@ def make_deterministic(seed: Optional[int] = 42) -> None:
     """
     Configure environment for deterministic operations.
 
-    Sets random seeds and configures TensorFlow for deterministic operations.
+    Sets random seeds and configures TensorFlow/PyTorch for deterministic operations.
     This may impact performance but ensures reproducibility.
 
     Args:
@@ -74,22 +96,29 @@ def make_deterministic(seed: Optional[int] = 42) -> None:
     if seed is not None:
         set_seed(seed)
 
-    # Configure TensorFlow for deterministic operations
-    try:
-        # Enable deterministic operations (TensorFlow 2.x)
-        tf.config.experimental.enable_op_determinism()
-        logger.info("Enabled TensorFlow deterministic operations")
-    except AttributeError:
-        # Fallback for older TensorFlow versions
-        logger.warning(
-            "TensorFlow deterministic operations not available. "
-            "Consider upgrading to TensorFlow 2.9+ for full determinism."
-        )
+    # Configure TensorFlow for deterministic operations (if available)
+    if TF_AVAILABLE and tf is not None:
+        try:
+            # Enable deterministic operations (TensorFlow 2.x)
+            tf.config.experimental.enable_op_determinism()
+            logger.info("Enabled TensorFlow deterministic operations")
+        except AttributeError:
+            # Fallback for older TensorFlow versions
+            logger.warning(
+                "TensorFlow deterministic operations not available. "
+                "Consider upgrading to TensorFlow 2.9+ for full determinism."
+            )
 
-    # Set additional environment variables for determinism
-    os.environ['TF_DETERMINISTIC_OPS'] = '1'
-    os.environ['TF_CUDNN_DETERMINISTIC'] = '1'
-    logger.debug("Set TensorFlow environment variables for determinism")
+        # Set additional environment variables for determinism
+        os.environ['TF_DETERMINISTIC_OPS'] = '1'
+        os.environ['TF_CUDNN_DETERMINISTIC'] = '1'
+        logger.debug("Set TensorFlow environment variables for determinism")
+
+    # Configure PyTorch for deterministic operations (if available)
+    if TORCH_AVAILABLE and torch is not None:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        logger.info("Enabled PyTorch deterministic operations")
 
     logger.info("Deterministic configuration complete")
 
@@ -112,6 +141,10 @@ def configure_gpu(
         >>> configure_gpu(memory_growth=True, memory_limit=4096)
         >>> # TensorFlow will use at most 4GB of GPU memory
     """
+    if not TF_AVAILABLE or tf is None:
+        logger.warning("TensorFlow not available. Skipping GPU configuration.")
+        return
+
     logger.info("Configuring GPU settings")
 
     gpus = tf.config.list_physical_devices('GPU')
@@ -163,17 +196,31 @@ def get_system_info() -> dict:
 
     Example:
         >>> info = get_system_info()
-        >>> print(info['tensorflow_version'])
-        2.12.0
+        >>> print(info.get('tensorflow_version', 'Not installed'))
     """
     info = {
         'python_version': os.sys.version,
         'numpy_version': np.__version__,
-        'tensorflow_version': tf.__version__,
-        'tensorflow_gpu_available': len(tf.config.list_physical_devices('GPU')) > 0,
-        'tensorflow_gpu_count': len(tf.config.list_physical_devices('GPU')),
         'pythonhashseed': os.environ.get('PYTHONHASHSEED', 'not set'),
     }
+
+    if TF_AVAILABLE and tf is not None:
+        info['tensorflow_version'] = tf.__version__
+        info['tensorflow_gpu_available'] = len(tf.config.list_physical_devices('GPU')) > 0
+        info['tensorflow_gpu_count'] = len(tf.config.list_physical_devices('GPU'))
+    else:
+        info['tensorflow_version'] = 'Not installed'
+        info['tensorflow_gpu_available'] = False
+        info['tensorflow_gpu_count'] = 0
+
+    if TORCH_AVAILABLE and torch is not None:
+        info['torch_version'] = torch.__version__
+        info['torch_cuda_available'] = torch.cuda.is_available()
+        info['torch_cuda_count'] = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    else:
+        info['torch_version'] = 'Not installed'
+        info['torch_cuda_available'] = False
+        info['torch_cuda_count'] = 0
 
     logger.debug(f"System info: {info}")
     return info
