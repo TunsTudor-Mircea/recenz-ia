@@ -138,19 +138,6 @@ print(f"Sentiment: {'Positive' if prediction[0] == 1 else 'Negative'}")
 print(f"Confidence: {confidence:.2%}")
 ```
 
-## Performance Comparison
-
-| Metric | RoBERT | XGBoost | Winner |
-|--------|--------|---------|--------|
-| **Accuracy** | **94-95%** | 91.6% | 🏆 RoBERT |
-| **Precision** | **94-95%** | 91.6% | 🏆 RoBERT |
-| **Recall** | **94-95%** | 91.6% | 🏆 RoBERT |
-| **F1 Score** | **94-95%** | 91.6% | 🏆 RoBERT |
-| **Training Time** | 1-3 hours | 7-60 min | 🏆 XGBoost |
-| **Inference Speed** | ~20ms | <1ms | 🏆 XGBoost |
-| **Model Size** | ~500MB | ~10MB | 🏆 XGBoost |
-| **GPU Required** | Recommended | No | 🏆 XGBoost |
-
 ### When to Use Each Model
 
 **Use RoBERT when:**
