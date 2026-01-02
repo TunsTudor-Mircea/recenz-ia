@@ -25,3 +25,4 @@ class User(Base):
 
     # Relationships
     reviews = relationship("Review", back_populates="user")
+    scraping_jobs = relationship("ScrapingJob", back_populates="user")

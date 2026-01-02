@@ -67,42 +67,77 @@ def create_review(
 
 @router.get("/", response_model=ReviewListResponse)
 def list_reviews(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
-    product_name: Optional[str] = None,
-    sentiment_label: Optional[str] = None,
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(10, ge=1, le=100, description="Maximum number of records to return"),
+    product_name: Optional[str] = Query(None, description="Filter by product name (partial match)"),
+    sentiment_label: Optional[str] = Query(None, regex="^(positive|neutral|negative)$", description="Filter by sentiment"),
+    min_rating: Optional[int] = Query(None, ge=1, le=5, description="Minimum rating (1-5)"),
+    max_rating: Optional[int] = Query(None, ge=1, le=5, description="Maximum rating (1-5)"),
+    search: Optional[str] = Query(None, min_length=3, description="Search in review text"),
+    sort_by: str = Query("created_at", regex="^(created_at|rating|sentiment_score|review_date)$", description="Sort field"),
+    order: str = Query("desc", regex="^(asc|desc)$", description="Sort order"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    List reviews with optional filtering.
+    List reviews with advanced filtering and search.
 
     Args:
-        skip: Number of reviews to skip
-        limit: Maximum number of reviews to return
-        product_name: Filter by product name (partial match)
-        sentiment_label: Filter by sentiment label
+        skip: Number of reviews to skip (pagination)
+        limit: Maximum number of reviews to return (1-100)
+        product_name: Filter by product name (case-insensitive partial match)
+        sentiment_label: Filter by sentiment (positive, neutral, negative)
+        min_rating: Minimum rating filter (1-5 stars)
+        max_rating: Maximum rating filter (1-5 stars)
+        search: Full-text search in review text (minimum 3 characters)
+        sort_by: Sort by field (created_at, rating, sentiment_score, review_date)
+        order: Sort order (asc or desc)
         db: Database session
         current_user: Current authenticated user
 
     Returns:
-        Paginated list of reviews
+        Paginated list of reviews with filtering applied
     """
+    # Build query
     query = db.query(Review).filter(Review.user_id == current_user.id)
 
+    # Apply filters
     if product_name:
         query = query.filter(Review.product_name.ilike(f"%{product_name}%"))
 
     if sentiment_label:
         query = query.filter(Review.sentiment_label == sentiment_label)
 
+    if min_rating:
+        query = query.filter(Review.rating >= min_rating)
+
+    if max_rating:
+        query = query.filter(Review.rating <= max_rating)
+
+    if search:
+        # Sanitize search query to prevent SQL injection
+        from app.core.validation import InputSanitizer
+        sanitized_search = InputSanitizer.sanitize_search_query(search)
+        # Full-text search in review text
+        query = query.filter(Review.review_text.ilike(f"%{sanitized_search}%"))
+
+    # Get total count before pagination
     total = query.count()
-    reviews = query.order_by(Review.created_at.desc()).offset(skip).limit(limit).all()
+
+    # Apply sorting
+    sort_column = getattr(Review, sort_by)
+    if order == "desc":
+        query = query.order_by(sort_column.desc())
+    else:
+        query = query.order_by(sort_column.asc())
+
+    # Apply pagination
+    reviews = query.offset(skip).limit(limit).all()
 
     return ReviewListResponse(
         reviews=reviews,
         total=total,
-        page=skip // limit + 1,
+        page=skip // limit + 1 if limit > 0 else 1,
         page_size=limit
     )
 

@@ -25,6 +25,10 @@ httpx==0.25.2
 requests==2.31.0
 beautifulsoup4==4.12.2
 
+# Web Scraping
+selenium==4.15.2
+webdriver-manager==4.0.1
+
 # ML & NLP (from POC)
 torch>=2.0.0
 torchvision>=0.15.0
