@@ -5,6 +5,7 @@ from sqlalchemy import Column, String, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy import DateTime
+from sqlalchemy.orm import relationship
 import uuid
 
 from app.core.database import Base
@@ -21,3 +22,6 @@ class User(Base):
     is_superuser = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    reviews = relationship("Review", back_populates="user")
