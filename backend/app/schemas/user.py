@@ -29,8 +29,9 @@ class UserResponse(UserBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True  # For SQLAlchemy models
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class Token(BaseModel):
