@@ -1,0 +1,46 @@
+# FastAPI & Server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.23
+alembic==1.12.1
+psycopg2-binary==2.9.9
+asyncpg==0.29.0  # For async PostgreSQL
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib==1.7.4
+bcrypt==4.0.1
+python-dotenv==1.0.0
+pydantic-settings==2.1.0
+
+# Task Queue
+celery==5.3.4
+redis==5.0.1
+
+# HTTP Client
+httpx==0.25.2
+requests==2.31.0
+beautifulsoup4==4.12.2
+
+# ML & NLP (from POC)
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.35.0
+scikit-learn>=1.3.0
+numpy>=1.24.0
+pandas>=2.0.0
+stanza>=1.7.0
+
+# Utilities
+python-dateutil==2.8.2
+loguru==0.7.2
+pydantic==2.5.2
+email-validator==2.2.0
+
+# Development
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.11.0
