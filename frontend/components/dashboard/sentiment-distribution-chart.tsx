@@ -8,10 +8,11 @@ interface SentimentDistributionChartProps {
   data: SentimentDistribution
 }
 
+// Professional colors matching app theme - neutral palette
 const COLORS = {
-  positive: "hsl(var(--sentiment-positive))",
-  neutral: "hsl(var(--sentiment-neutral))",
-  negative: "hsl(var(--sentiment-negative))",
+  positive: "#0891b2", // Cyan-600 - bright teal for positive
+  neutral: "#64748b", // Slate-500 - neutral gray-blue
+  negative: "#475569", // Slate-600 - darker neutral gray
 }
 
 export function SentimentDistributionChart({ data }: SentimentDistributionChartProps) {
@@ -34,8 +35,17 @@ export function SentimentDistributionChart({ data }: SentimentDistributionChartP
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
-            <Tooltip />
-            <Legend />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px"
+              }}
+              labelStyle={{ color: "#111827" }}
+            />
+            <Legend
+              wrapperStyle={{ color: "#111827" }}
+            />
           </PieChart>
         </ResponsiveContainer>
         <div className="mt-4 grid grid-cols-3 gap-4 text-center">

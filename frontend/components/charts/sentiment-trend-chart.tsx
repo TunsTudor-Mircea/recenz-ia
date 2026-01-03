@@ -24,27 +24,55 @@ export function SentimentTrendChart({ data }: SentimentTrendChartProps) {
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis yAxisId="left" domain={[0, 1]} />
-            <YAxis yAxisId="right" orientation="right" domain={[0, 5]} />
-            <Tooltip />
-            <Legend />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
+            <XAxis
+              dataKey="date"
+              stroke="#6b7280"
+              tick={{ fill: "#374151" }}
+            />
+            <YAxis
+              yAxisId="left"
+              domain={[0, 1]}
+              stroke="#22c55e"
+              tick={{ fill: "#6b7280" }}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              domain={[0, 5]}
+              stroke="#f59e0b"
+              tick={{ fill: "#6b7280" }}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px"
+              }}
+              labelStyle={{ color: "#111827" }}
+            />
+            <Legend
+              wrapperStyle={{ color: "#111827" }}
+            />
             <Line
               yAxisId="left"
               type="monotone"
               dataKey="sentiment"
-              stroke="hsl(var(--chart-1))"
-              strokeWidth={2}
+              stroke="#22c55e"
+              strokeWidth={3}
               name="Sentiment Score"
+              dot={{ fill: "#22c55e", strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, fill: "#22c55e" }}
             />
             <Line
               yAxisId="right"
               type="monotone"
               dataKey="rating"
-              stroke="hsl(var(--chart-2))"
-              strokeWidth={2}
+              stroke="#f59e0b"
+              strokeWidth={3}
               name="Average Rating"
+              dot={{ fill: "#f59e0b", strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, fill: "#f59e0b" }}
             />
           </LineChart>
         </ResponsiveContainer>

@@ -8,7 +8,8 @@ interface RatingDistributionChartProps {
   data: RatingDistribution
 }
 
-const CHART_COLOR = "hsl(var(--chart-4))"
+// Medium vibrancy teal - balanced color
+const CHART_COLOR = "#14b8a6" // Medium teal
 
 export function RatingDistributionChart({ data }: RatingDistributionChartProps) {
   const chartData = [
@@ -27,10 +28,17 @@ export function RatingDistributionChart({ data }: RatingDistributionChartProps) 
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={chartData} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" />
-            <YAxis type="category" dataKey="rating" />
-            <Tooltip />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
+            <XAxis type="number" stroke="#6b7280" tick={{ fill: "#6b7280" }} />
+            <YAxis type="category" dataKey="rating" stroke="#6b7280" tick={{ fill: "#374151" }} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px"
+              }}
+              labelStyle={{ color: "#111827" }}
+            />
             <Bar dataKey="count" radius={[0, 4, 4, 0]}>
               {chartData.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={CHART_COLOR} />
