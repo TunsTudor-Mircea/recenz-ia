@@ -8,11 +8,11 @@ interface SentimentDistributionChartProps {
   data: SentimentDistribution
 }
 
-// Professional colors matching app theme - neutral palette
+// Professional colors matching app theme with teal accent
 const COLORS = {
-  positive: "#0891b2", // Cyan-600 - bright teal for positive
-  neutral: "#64748b", // Slate-500 - neutral gray-blue
-  negative: "#475569", // Slate-600 - darker neutral gray
+  positive: "#14b8a6", // Teal-500 - vibrant teal for positive sentiment
+  neutral: "#f59e0b", // Amber-500 - warm amber for neutral sentiment
+  negative: "#475569", // Slate-600 - cooler gray-blue for negative sentiment
 }
 
 export function SentimentDistributionChart({ data }: SentimentDistributionChartProps) {
