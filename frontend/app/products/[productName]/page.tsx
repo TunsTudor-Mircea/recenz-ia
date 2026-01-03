@@ -135,8 +135,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
   }
 
   const topReviews = {
-    positive: reviews.filter((r) => r.sentiment_label === "positive").slice(0, 5),
-    negative: reviews.filter((r) => r.sentiment_label === "negative").slice(0, 5),
+    positive: reviews
+      .filter((r) => r.sentiment_label === "positive")
+      .sort((a, b) => b.sentiment_score - a.sentiment_score)
+      .slice(0, 5),
+    negative: reviews
+      .filter((r) => r.sentiment_label === "negative")
+      .sort((a, b) => b.sentiment_score - a.sentiment_score)
+      .slice(0, 5),
   }
 
   return (
