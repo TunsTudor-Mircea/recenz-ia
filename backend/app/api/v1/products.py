@@ -2,9 +2,10 @@
 Products API endpoints for aggregated product data.
 """
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, asc
+from loguru import logger
 
 from app.core.database import get_db
 from app.api.v1.auth import get_current_user
@@ -112,3 +113,46 @@ def get_products(
         skip=skip,
         limit=limit
     )
+
+
+@router.delete("/{product_name}")
+def delete_product(
+    product_name: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete all reviews for a specific product.
+
+    Args:
+        product_name: Name of the product to delete
+
+    Returns:
+        Success message with count of deleted reviews
+    """
+    # Check if product exists for this user
+    reviews_count = db.query(Review).filter(
+        Review.user_id == current_user.id,
+        Review.product_name == product_name
+    ).count()
+
+    if reviews_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Product '{product_name}' not found or you don't have permission to delete it"
+        )
+
+    # Delete all reviews for this product
+    deleted_count = db.query(Review).filter(
+        Review.user_id == current_user.id,
+        Review.product_name == product_name
+    ).delete()
+
+    db.commit()
+
+    logger.info(f"User {current_user.email} deleted product '{product_name}' ({deleted_count} reviews)")
+
+    return {
+        "message": f"Product '{product_name}' deleted successfully",
+        "deleted_reviews": deleted_count
+    }

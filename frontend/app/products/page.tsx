@@ -110,6 +110,27 @@ function ProductsContent() {
     return `${sortBy}-${sortOrder}`
   }
 
+  const handleDeleteProduct = async (productName: string) => {
+    try {
+      await api.delete(`/api/v1/products/${encodeURIComponent(productName)}`)
+
+      toast({
+        title: "Success",
+        description: `Product "${productName}" has been deleted successfully.`,
+      })
+
+      // Refresh the products list
+      fetchProducts()
+    } catch (error) {
+      console.error("Failed to delete product:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete product. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -179,6 +200,7 @@ function ProductsContent() {
                   averageRating={product.average_rating}
                   sentimentDistribution={product.sentiment_distribution}
                   lastUpdated={product.last_updated || new Date().toISOString()}
+                  onDelete={handleDeleteProduct}
                 />
               ))}
             </div>

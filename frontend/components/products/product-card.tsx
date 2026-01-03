@@ -1,8 +1,22 @@
+"use client"
+
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StarRating } from "@/components/star-rating"
 import { Badge } from "@/components/ui/badge"
-import { MessageSquare, TrendingUp, Calendar } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { MessageSquare, TrendingUp, Calendar, Trash2 } from "lucide-react"
 import type { SentimentDistribution } from "@/types/api"
 
 interface ProductCardProps {
@@ -11,6 +25,7 @@ interface ProductCardProps {
   averageRating: number
   sentimentDistribution: SentimentDistribution
   lastUpdated?: string
+  onDelete?: (productName: string) => void
 }
 
 export function ProductCard({
@@ -19,15 +34,58 @@ export function ProductCard({
   averageRating,
   sentimentDistribution,
   lastUpdated,
+  onDelete,
 }: ProductCardProps) {
   const positivePercentage = Math.round((sentimentDistribution.positive / sentimentDistribution.total) * 100)
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (onDelete) {
+      onDelete(name)
+    }
+  }
+
   return (
-    <Link href={`/products/${encodeURIComponent(name)}`}>
-      <Card className="hover:shadow-lg transition-all duration-200 hover:border-primary/50 group h-full">
-        <CardHeader>
-          <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors">{name}</CardTitle>
-        </CardHeader>
+    <Card className="hover:shadow-lg transition-all duration-200 hover:border-primary/50 group h-full relative">
+      <CardHeader>
+        <div className="flex items-start justify-between gap-2">
+          <Link href={`/products/${encodeURIComponent(name)}`} className="flex-1 min-w-0">
+            <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors">{name}</CardTitle>
+          </Link>
+          {onDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{name}"? This will permanently delete all {totalReviews} reviews for this product. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+      </CardHeader>
+      <Link href={`/products/${encodeURIComponent(name)}`} className="block">
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <StarRating rating={averageRating} size={18} />
@@ -66,7 +124,7 @@ export function ProductCard({
             </div>
           )}
         </CardContent>
-      </Card>
-    </Link>
+      </Link>
+    </Card>
   )
 }
