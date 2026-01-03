@@ -6,4 +6,9 @@ codebase.md
 .vscode/
 __pycache__/
 env/
-.idea/ 
+.idea/
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/next-env.d.ts 

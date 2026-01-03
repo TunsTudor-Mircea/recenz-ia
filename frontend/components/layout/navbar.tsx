@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { TrendingUp, User, LogOut, LayoutDashboard, Package } from "lucide-react"
+import { User, LogOut, LayoutDashboard, Package } from "lucide-react"
 import { logout } from "@/lib/auth"
 import { ThemeToggle } from "@/components/theme-toggle"
 
@@ -35,9 +36,13 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <TrendingUp className="h-5 w-5 text-primary-foreground" />
-              </div>
+              <Image
+                src="/logo.png"
+                alt="RecenzIA Logo"
+                width={32}
+                height={32}
+                className="rounded-lg"
+              />
               <span className="text-xl font-bold">RecenzIA</span>
             </Link>
 
