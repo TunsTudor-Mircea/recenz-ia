@@ -6,4 +6,4 @@ codebase.md
 .vscode/
 __pycache__/
 env/
-.idea/
+.idea/ 

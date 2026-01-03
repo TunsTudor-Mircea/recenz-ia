@@ -24,6 +24,7 @@ class Review(Base):
 
     # Review content
     product_name = Column(String(255), nullable=False, index=True)
+    review_title = Column(String(500), nullable=True)  # Optional review title
     review_text = Column(Text, nullable=False)
     rating = Column(Integer, nullable=False)  # 1-5 stars
     review_date = Column(DateTime(timezone=True), nullable=True)  # Original review date from source

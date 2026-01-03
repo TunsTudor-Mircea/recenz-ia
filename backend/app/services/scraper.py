@@ -19,8 +19,9 @@ from selenium.common.exceptions import TimeoutException, WebDriverException
 
 class ReviewData:
     """Data class for scraped review."""
-    def __init__(self, product_name: str, review_text: str, rating: int, review_date: Optional[datetime] = None, **metadata):
+    def __init__(self, product_name: str, review_text: str, rating: int, review_date: Optional[datetime] = None, review_title: Optional[str] = None, **metadata):
         self.product_name = product_name
+        self.review_title = review_title
         self.review_text = review_text
         self.rating = rating
         self.review_date = review_date
@@ -350,17 +351,19 @@ class EmagScraper(SeleniumScraper):
             # Clean up review body - remove eMAG metadata text
             review_body = re.sub(r'Review (cumparator|utilizator) eMAG', '', review_body, flags=re.IGNORECASE).strip()
 
-            # Combine title and body for the full review text
-            # If there's a title, prepend it to the body
-            if review_title and review_title not in review_body:
-                review_text = f"{review_title}. {review_body}" if review_body else review_title
-            else:
-                review_text = review_body
+            # Keep title and body separate - don't combine them
+            # The title will go into review_title field, body into review_text
+            review_text = review_body
 
             logger.debug(f"Review {idx}: Title='{review_title[:50] if review_title else 'N/A'}', Body length={len(review_body)}")
 
             # Filter out UI elements and metadata
             # Skip if it's clearly not a review
+            # If there's only a title but no body, use the title as the text
+            if not review_text and review_title:
+                review_text = review_title
+                review_title = None  # Clear title since we're using it as body
+
             if len(review_text) < 20:
                 logger.debug(f"Review {idx}: Filtered - text too short ({len(review_text)} chars)")
                 continue
@@ -381,11 +384,15 @@ class EmagScraper(SeleniumScraper):
             # Extract rating
             rating = self.extract_rating_from_stars(review_elem)
 
-            # Extract review date
+            # Extract review date - use today's date if extraction fails
             review_date = self.extract_review_date(review_elem)
+            if not review_date:
+                review_date = datetime.now()
+                logger.debug(f"Review {idx}: Could not extract date, using current date")
 
             reviews.append(ReviewData(
                 product_name=product_name,
+                review_title=review_title if review_title else None,
                 review_text=review_text,
                 rating=rating,
                 review_date=review_date,
@@ -450,6 +457,7 @@ class CelScraper(BaseScraper):
                 product_name=product_name,
                 review_text=review_text,
                 rating=rating,
+                review_date=datetime.now(),  # Use current date as fallback
                 source='cel'
             ))
 
@@ -492,6 +500,7 @@ class GenericScraper(BaseScraper):
                     product_name=product_name,
                     review_text=text,
                     rating=3,  # Default rating
+                    review_date=datetime.now(),  # Use current date as fallback
                     source='generic'
                 ))
 

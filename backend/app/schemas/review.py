@@ -11,6 +11,7 @@ class ReviewBase(BaseModel):
     """Base review schema."""
 
     product_name: str = Field(..., min_length=2, max_length=500, description="Product name")
+    review_title: Optional[str] = Field(None, max_length=500, description="Optional review title")
     review_text: str = Field(..., min_length=10, max_length=5000, description="Review text content")
     rating: int = Field(..., ge=1, le=5, description="Rating from 1 to 5 stars")
     review_date: Optional[datetime] = Field(None, description="Original review date from source")
@@ -48,6 +49,7 @@ class ReviewUpdate(BaseModel):
     """Schema for updating a review."""
 
     product_name: Optional[str] = Field(None, min_length=2, max_length=500, description="Product name")
+    review_title: Optional[str] = Field(None, max_length=500, description="Optional review title")
     review_text: Optional[str] = Field(None, min_length=10, max_length=5000, description="Review text content")
     rating: Optional[int] = Field(None, ge=1, le=5, description="Rating from 1 to 5 stars")
 

@@ -53,7 +53,7 @@ def get_products(
         Review.product_name.label('name'),
         func.count(Review.id).label('total_reviews'),
         func.avg(Review.rating).label('average_rating'),
-        func.max(Review.review_date).label('last_updated'),
+        func.max(Review.created_at).label('last_updated'),  # Use created_at instead of review_date
         func.sum(case((Review.sentiment_label == 'positive', 1), else_=0)).label('positive'),
         func.sum(case((Review.sentiment_label == 'neutral', 1), else_=0)).label('neutral'),
         func.sum(case((Review.sentiment_label == 'negative', 1), else_=0)).label('negative'),
@@ -75,10 +75,10 @@ def get_products(
         'name': Review.product_name,
         'rating': func.avg(Review.rating),
         'reviews': func.count(Review.id),
-        'updated_at': func.max(Review.review_date)
+        'updated_at': func.max(Review.created_at)  # Use created_at instead of review_date
     }
 
-    sort_column = sort_column_map.get(sort_by, func.max(Review.review_date))
+    sort_column = sort_column_map.get(sort_by, func.max(Review.created_at))
     if sort_order == 'desc':
         query = query.order_by(desc(sort_column))
     else:

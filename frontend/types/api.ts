@@ -1,6 +1,7 @@
 export interface Review {
   id: string
   product_name: string
+  review_title?: string | null
   review_text: string
   rating: 1 | 2 | 3 | 4 | 5
   sentiment_label: "positive" | "neutral" | "negative"

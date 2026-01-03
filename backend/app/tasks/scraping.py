@@ -109,6 +109,7 @@ def scrape_product_reviews(self, job_id: str, url: str, site_type: Optional[str]
                 review = Review(
                     user_id=user_id,
                     product_name=review_data.product_name,
+                    review_title=review_data.review_title,
                     review_text=review_data.review_text,
                     rating=review_data.rating,
                     review_date=review_data.review_date,

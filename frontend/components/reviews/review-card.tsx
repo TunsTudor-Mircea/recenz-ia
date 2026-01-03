@@ -17,7 +17,11 @@ export function ReviewCard({ review }: ReviewCardProps) {
           <SentimentBadge sentiment={review.sentiment_label} score={review.sentiment_score} />
         </div>
 
-        <p className="text-sm leading-relaxed">{review.review_text}</p>
+        {review.review_title && (
+          <h3 className="font-semibold text-base leading-tight">{review.review_title}</h3>
+        )}
+
+        <p className="text-sm leading-relaxed text-muted-foreground">{review.review_text}</p>
 
         <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
           <div className="flex items-center gap-1">
