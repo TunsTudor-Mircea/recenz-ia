@@ -83,3 +83,22 @@ class AnalyticsSummary(BaseModel):
     sentiment_distribution: SentimentDistribution
     top_rated_products: List[str]
     most_reviewed_products: List[str]
+
+
+class ProductSummary(BaseModel):
+    """Summary information for a single product."""
+
+    name: str = Field(..., description="Product name")
+    total_reviews: int = Field(..., description="Total number of reviews")
+    average_rating: float = Field(..., description="Average rating")
+    sentiment_distribution: SentimentDistribution = Field(..., description="Sentiment breakdown")
+    last_updated: Optional[str] = Field(None, description="Last review date (ISO format)")
+
+
+class PaginatedProducts(BaseModel):
+    """Paginated list of products."""
+
+    products: List[ProductSummary] = Field(..., description="List of products")
+    total: int = Field(..., description="Total number of products")
+    skip: int = Field(..., description="Number of products skipped")
+    limit: int = Field(..., description="Number of products per page")

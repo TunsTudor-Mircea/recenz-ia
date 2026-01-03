@@ -7,85 +7,76 @@ import { AddProductModal } from "@/components/products/add-product-modal"
 import { ProductCard } from "@/components/products/product-card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
-import { Search, Package } from "lucide-react"
+import { Search, Package, ChevronLeft, ChevronRight } from "lucide-react"
 import { isAuthenticated } from "@/lib/auth"
 import api from "@/lib/api"
-import type { Review, SentimentDistribution } from "@/types/api"
+import type { SentimentDistribution } from "@/types/api"
 
 interface ProductSummary {
   name: string
-  totalReviews: number
-  averageRating: number
-  sentimentDistribution: SentimentDistribution
-  lastUpdated: string
+  total_reviews: number
+  average_rating: number
+  sentiment_distribution: SentimentDistribution
+  last_updated: string | null
+}
+
+interface PaginatedProducts {
+  products: ProductSummary[]
+  total: number
+  skip: number
+  limit: number
 }
 
 function ProductsContent() {
   const [products, setProducts] = useState<ProductSummary[]>([])
-  const [filteredProducts, setFilteredProducts] = useState<ProductSummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  const [sortBy, setSortBy] = useState("name")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [sortBy, setSortBy] = useState("updated_at")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalProducts, setTotalProducts] = useState(0)
+  const productsPerPage = 6
   const router = useRouter()
   const { toast } = useToast()
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+      setCurrentPage(1) // Reset to first page on new search
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   const fetchProducts = async () => {
     try {
       setIsLoading(true)
 
-      // Backend has a max limit of 100, so we need to fetch in batches
-      let allReviews: Review[] = []
-      let skip = 0
-      const limit = 100
-      let hasMore = true
-
-      while (hasMore) {
-        const response = await api.get<{ reviews: Review[]; total: number }>(
-          `/api/v1/reviews/?skip=${skip}&limit=${limit}`
-        )
-        allReviews = [...allReviews, ...response.data.reviews]
-        skip += limit
-        hasMore = response.data.reviews.length === limit
-      }
-
-      // Group by product name and aggregate stats
-      const productMap = new Map<string, ProductSummary>()
-
-      allReviews.forEach((review) => {
-        const existing = productMap.get(review.product_name)
-
-        if (existing) {
-          existing.totalReviews++
-          existing.averageRating =
-            (existing.averageRating * (existing.totalReviews - 1) + review.rating) / existing.totalReviews
-          existing.sentimentDistribution[review.sentiment_label]++
-          existing.sentimentDistribution.total++
-          if (new Date(review.review_date) > new Date(existing.lastUpdated)) {
-            existing.lastUpdated = review.review_date
-          }
-        } else {
-          productMap.set(review.product_name, {
-            name: review.product_name,
-            totalReviews: 1,
-            averageRating: review.rating,
-            sentimentDistribution: {
-              positive: review.sentiment_label === "positive" ? 1 : 0,
-              neutral: review.sentiment_label === "neutral" ? 1 : 0,
-              negative: review.sentiment_label === "negative" ? 1 : 0,
-              total: 1,
-            },
-            lastUpdated: review.review_date,
-          })
-        }
+      const skip = (currentPage - 1) * productsPerPage
+      const params = new URLSearchParams({
+        skip: skip.toString(),
+        limit: productsPerPage.toString(),
+        sort_by: sortBy,
+        sort_order: sortOrder,
       })
 
-      const productsList = Array.from(productMap.values())
-      setProducts(productsList)
-      setFilteredProducts(productsList)
+      if (debouncedSearch) {
+        params.append("search", debouncedSearch)
+      }
+
+      const response = await api.get<PaginatedProducts>(
+        `/api/v1/products/?${params.toString()}`
+      )
+
+      setProducts(response.data.products)
+      setTotalProducts(response.data.total)
     } catch (error) {
-      console.error("[v0] Failed to fetch products:", error)
+      console.error("Failed to fetch products:", error)
       toast({
         title: "Error",
         description: "Failed to load products. Please try again.",
@@ -103,34 +94,21 @@ function ProductsContent() {
     }
 
     fetchProducts()
-  }, [router])
+  }, [router, currentPage, sortBy, sortOrder, debouncedSearch])
 
-  useEffect(() => {
-    let filtered = [...products]
+  const totalPages = Math.ceil(totalProducts / productsPerPage)
 
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter((product) => product.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    }
+  const handleSortChange = (value: string) => {
+    // Parse sort value (format: "field-order")
+    const [field, order] = value.split("-")
+    setSortBy(field)
+    setSortOrder(order as "asc" | "desc")
+    setCurrentPage(1) // Reset to first page on sort change
+  }
 
-    // Sort
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "name":
-          return a.name.localeCompare(b.name)
-        case "rating":
-          return b.averageRating - a.averageRating
-        case "reviews":
-          return b.totalReviews - a.totalReviews
-        case "date":
-          return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
-        default:
-          return 0
-      }
-    })
-
-    setFilteredProducts(filtered)
-  }, [searchQuery, sortBy, products])
+  const getCurrentSortValue = () => {
+    return `${sortBy}-${sortOrder}`
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -142,7 +120,10 @@ function ProductsContent() {
             <h1 className="text-3xl font-bold tracking-tight">Products</h1>
             <p className="text-muted-foreground mt-1">Manage and analyze your product reviews</p>
           </div>
-          <AddProductModal onSuccess={fetchProducts} />
+          <AddProductModal onSuccess={() => {
+            setCurrentPage(1)
+            fetchProducts()
+          }} />
         </div>
 
         {/* Filters */}
@@ -156,32 +137,107 @@ function ProductsContent() {
               className="pl-10"
             />
           </div>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full sm:w-48">
+          <Select value={getCurrentSortValue()} onValueChange={handleSortChange}>
+            <SelectTrigger className="w-full sm:w-56">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name">Name (A-Z)</SelectItem>
-              <SelectItem value="rating">Highest Rating</SelectItem>
-              <SelectItem value="reviews">Most Reviews</SelectItem>
-              <SelectItem value="date">Recently Updated</SelectItem>
+              <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+              <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+              <SelectItem value="rating-desc">Highest Rating</SelectItem>
+              <SelectItem value="rating-asc">Lowest Rating</SelectItem>
+              <SelectItem value="reviews-desc">Most Reviews</SelectItem>
+              <SelectItem value="reviews-asc">Least Reviews</SelectItem>
+              <SelectItem value="updated_at-desc">Recently Updated</SelectItem>
+              <SelectItem value="updated_at-asc">Oldest Updated</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
+        {/* Results Count */}
+        {!isLoading && (
+          <div className="text-sm text-muted-foreground">
+            Showing {products.length > 0 ? ((currentPage - 1) * productsPerPage) + 1 : 0} to {Math.min(currentPage * productsPerPage, totalProducts)} of {totalProducts} products
+          </div>
+        )}
+
         {/* Products Grid */}
         {isLoading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
             {[...Array(6)].map((_, i) => (
               <Skeleton key={i} className="h-80" />
             ))}
           </div>
-        ) : filteredProducts.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.name} {...product} />
-            ))}
-          </div>
+        ) : products.length > 0 ? (
+          <>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.name}
+                  name={product.name}
+                  totalReviews={product.total_reviews}
+                  averageRating={product.average_rating}
+                  sentimentDistribution={product.sentiment_distribution}
+                  lastUpdated={product.last_updated || new Date().toISOString()}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {[...Array(Math.min(totalPages, 7))].map((_, idx) => {
+                    let pageNum: number
+
+                    if (totalPages <= 7) {
+                      pageNum = idx + 1
+                    } else if (currentPage <= 4) {
+                      pageNum = idx + 1
+                    } else if (currentPage >= totalPages - 3) {
+                      pageNum = totalPages - 6 + idx
+                    } else {
+                      pageNum = currentPage - 3 + idx
+                    }
+
+                    if (pageNum < 1 || pageNum > totalPages) return null
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-10"
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Package className="h-16 w-16 text-muted-foreground/50 mb-4" />
@@ -189,7 +245,10 @@ function ProductsContent() {
             <p className="text-muted-foreground mb-4">
               {searchQuery ? "Try adjusting your search" : "Get started by adding your first product"}
             </p>
-            {!searchQuery && <AddProductModal onSuccess={fetchProducts} />}
+            {!searchQuery && <AddProductModal onSuccess={() => {
+              setCurrentPage(1)
+              fetchProducts()
+            }} />}
           </div>
         )}
       </main>
