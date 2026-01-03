@@ -170,12 +170,14 @@ export function AddProductModal({ onSuccess }: AddProductModalProps) {
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLoading ? "Analyzing..." : "Start Analysis"}
-            </Button>
-          </DialogFooter>
+          {!job && (
+            <DialogFooter>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading ? "Starting..." : "Start Analysis"}
+              </Button>
+            </DialogFooter>
+          )}
         </form>
       </DialogContent>
     </Dialog>
