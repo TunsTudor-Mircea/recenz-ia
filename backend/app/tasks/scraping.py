@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.tasks.celery_app import celery_app
 from app.core.database import SessionLocal
+from app.core.redis_pubsub import publish_job_update
 from app.models.scraping_job import ScrapingJob, JobStatus
 from app.models.review import Review
 from app.services.scraper import scrape_reviews
@@ -47,7 +48,20 @@ def scrape_product_reviews(self, job_id: str, url: str, site_type: Optional[str]
         job.status = JobStatus.IN_PROGRESS
         job.started_at = datetime.utcnow()
         job.celery_task_id = self.request.id
+        timestamp_started = job.started_at.isoformat()
         db.commit()
+
+        # Broadcast status update via WebSocket (after commit to avoid race condition)
+        try:
+            publish_job_update(
+                job_id=job_id,
+                status="in_progress",
+                reviews_scraped=0,
+                reviews_created=0,
+                timestamp=timestamp_started
+            )
+        except Exception as e:
+            logger.warning(f"Failed to publish job start update: {e}")
 
         logger.info(f"Starting scraping job {job_id} for URL: {url}")
 
@@ -137,7 +151,22 @@ def scrape_product_reviews(self, job_id: str, url: str, site_type: Optional[str]
             "source": scraped_reviews[0].metadata.get('source', 'unknown') if scraped_reviews else 'unknown',
             "duplicates_skipped": reviews_skipped_duplicates
         }
+        timestamp_completed = job.completed_at.isoformat()
         db.commit()
+
+        # Broadcast completion via WebSocket (after commit to ensure consistency)
+        try:
+            success = publish_job_update(
+                job_id=job_id,
+                status="completed",
+                reviews_scraped=len(scraped_reviews),
+                reviews_created=reviews_created,
+                timestamp=timestamp_completed
+            )
+            if not success:
+                logger.error(f"Failed to publish completion update for job {job_id}")
+        except Exception as e:
+            logger.error(f"Exception publishing completion update for job {job_id}: {e}")
 
         logger.info(f"Completed scraping job {job_id}: {reviews_created}/{len(scraped_reviews)} reviews saved, {reviews_skipped_duplicates} duplicates skipped")
 
@@ -150,7 +179,21 @@ def scrape_product_reviews(self, job_id: str, url: str, site_type: Optional[str]
             job.status = JobStatus.FAILED
             job.completed_at = datetime.utcnow()
             job.error_message = str(e)
+            timestamp_failed = job.completed_at.isoformat()
             db.commit()
+
+            # Broadcast failure via WebSocket (after commit)
+            try:
+                success = publish_job_update(
+                    job_id=job_id,
+                    status="failed",
+                    error_message=str(e),
+                    timestamp=timestamp_failed
+                )
+                if not success:
+                    logger.error(f"Failed to publish failure update for job {job_id}")
+            except Exception as e:
+                logger.error(f"Exception publishing failure update for job {job_id}: {e}")
 
         raise
 

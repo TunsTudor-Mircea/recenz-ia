@@ -16,8 +16,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { useToast } from "@/hooks/use-toast"
+import { useScrapingJobWS } from "@/hooks/use-scraping-job-ws"
 import api from "@/lib/api"
-import { Plus, Loader2, CheckCircle2, XCircle } from "lucide-react"
+import { Plus, Loader2, CheckCircle2, XCircle, Wifi, WifiOff } from "lucide-react"
 import type { ScrapingJob } from "@/types/api"
 
 interface AddProductModalProps {
@@ -28,34 +29,42 @@ export function AddProductModal({ onSuccess }: AddProductModalProps) {
   const [open, setOpen] = useState(false)
   const [url, setUrl] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [job, setJob] = useState<ScrapingJob | null>(null)
+  const [jobId, setJobId] = useState<string | null>(null)
   const { toast } = useToast()
-  const [pollIntervalId, setPollIntervalId] = useState<NodeJS.Timeout | null>(null)
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null)
 
-  // Cleanup polling intervals on unmount or dialog close
-  useEffect(() => {
-    return () => {
-      if (pollIntervalId) {
-        clearInterval(pollIntervalId)
-      }
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
-    }
-  }, [pollIntervalId, timeoutId])
+  // Use WebSocket hook for real-time job updates
+  const { job, isConnected, connectionError } = useScrapingJobWS({
+    jobId,
+    onStatusChange: (jobUpdate) => {
+      console.log("[AddProductModal] Job status changed:", jobUpdate)
+    },
+    onComplete: (jobUpdate) => {
+      toast({
+        title: "Success",
+        description: `Successfully analyzed ${jobUpdate.reviews_created} reviews!`,
+      })
+      setIsLoading(false)
+      setTimeout(() => {
+        setOpen(false)
+        setUrl("")
+        setJobId(null)
+        onSuccess?.()
+      }, 2000)
+    },
+    onError: (jobUpdate) => {
+      toast({
+        title: "Error",
+        description: jobUpdate.error_message || "Failed to scrape product",
+        variant: "destructive",
+      })
+      setIsLoading(false)
+    },
+  })
 
-  // Clear polling when dialog closes
+  // Reset job when dialog closes
   useEffect(() => {
     if (!open) {
-      if (pollIntervalId) {
-        clearInterval(pollIntervalId)
-        setPollIntervalId(null)
-      }
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-        setTimeoutId(null)
-      }
+      setJobId(null)
     }
   }, [open])
 
@@ -79,66 +88,13 @@ export function AddProductModal({ onSuccess }: AddProductModalProps) {
         site_type: "emag",
       })
 
-      setJob(response.data)
+      // Set job ID to trigger WebSocket connection
+      setJobId(response.data.id)
+
       toast({
         title: "Scraping Started",
-        description: "Your product is being analyzed. This may take a few minutes.",
+        description: "Your product is being analyzed. Updates will appear in real-time.",
       })
-
-      // Poll for job status using the specific job ID
-      const pollInterval = setInterval(async () => {
-        try {
-          const jobResponse = await api.get<ScrapingJob>(`/api/v1/scraping/${response.data.id}`)
-          const currentJob = jobResponse.data
-
-          setJob(currentJob)
-
-          if (currentJob.status === "completed") {
-            clearInterval(pollInterval)
-            setPollIntervalId(null)
-            toast({
-              title: "Success",
-              description: `Successfully analyzed ${currentJob.reviews_created} reviews!`,
-            })
-            setIsLoading(false)
-            setTimeout(() => {
-              setOpen(false)
-              setUrl("")
-              setJob(null)
-              onSuccess?.()
-            }, 2000)
-          } else if (currentJob.status === "failed") {
-            clearInterval(pollInterval)
-            setPollIntervalId(null)
-            toast({
-              title: "Error",
-              description: currentJob.error_message || "Failed to scrape product",
-              variant: "destructive",
-            })
-            setIsLoading(false)
-          }
-        } catch (error) {
-          console.error("[v0] Failed to poll job status:", error)
-        }
-      }, 3000)
-
-      setPollIntervalId(pollInterval)
-
-      // Stop polling after 5 minutes
-      const timeout = setTimeout(() => {
-        clearInterval(pollInterval)
-        setPollIntervalId(null)
-        setTimeoutId(null)
-        if (isLoading) {
-          setIsLoading(false)
-          toast({
-            title: "Taking longer than expected",
-            description: "Your scraping job is still running. Check back later.",
-          })
-        }
-      }, 300000)
-
-      setTimeoutId(timeout)
     } catch (error: unknown) {
       const errorMessage =
         error && typeof error === "object" && "response" in error
@@ -157,8 +113,9 @@ export function AddProductModal({ onSuccess }: AddProductModalProps) {
   const getProgress = () => {
     if (!job) return 0
     if (job.status === "pending") return 10
-    if (job.status === "running") {
-      return Math.min(90, 10 + (job.reviews_scraped / Math.max(job.reviews_scraped, 50)) * 80)
+    if (job.status === "in_progress") {
+      const scraped = job.reviews_scraped || 0
+      return Math.min(90, 10 + (scraped / Math.max(scraped, 50)) * 80)
     }
     if (job.status === "completed") return 100
     return 0
@@ -195,12 +152,20 @@ export function AddProductModal({ onSuccess }: AddProductModalProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Status: {job.status}</span>
-                  {job.status === "completed" && <CheckCircle2 className="h-4 w-4 text-[var(--sentiment-positive)]" />}
-                  {job.status === "failed" && <XCircle className="h-4 w-4 text-[var(--sentiment-negative)]" />}
+                  <div className="flex items-center gap-2">
+                    {isConnected ? (
+                      <Wifi className="h-4 w-4 text-green-500" title="Connected" />
+                    ) : (
+                      <WifiOff className="h-4 w-4 text-gray-400" title="Connecting..." />
+                    )}
+                    {job.status === "completed" && <CheckCircle2 className="h-4 w-4 text-[var(--sentiment-positive)]" />}
+                    {job.status === "failed" && <XCircle className="h-4 w-4 text-[var(--sentiment-negative)]" />}
+                  </div>
                 </div>
                 <Progress value={getProgress()} className="h-2" />
                 <p className="text-xs text-muted-foreground">
-                  {job.reviews_scraped > 0 && `${job.reviews_scraped} reviews scraped`}
+                  {job.reviews_scraped !== undefined && job.reviews_scraped > 0 && `${job.reviews_scraped} reviews scraped`}
+                  {connectionError && <span className="text-red-500"> • {connectionError}</span>}
                 </p>
               </div>
             )}

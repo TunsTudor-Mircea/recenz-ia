@@ -68,8 +68,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Get client IP
         client_ip = request.client.host if request.client else "unknown"
 
-        # Skip rate limiting for health check
-        if request.url.path == "/health":
+        # Skip rate limiting for health check and WebSocket connections
+        if request.url.path == "/health" or request.url.path.startswith("/api/v1/ws/"):
             return await call_next(request)
 
         # Cleanup old requests periodically
@@ -149,20 +149,25 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         start_time = time.time()
 
-        # Log request
-        client_ip = request.client.host if request.client else "unknown"
-        logger.info(
-            f"Request: {request.method} {request.url.path} from {client_ip}"
-        )
+        # Skip logging for WebSocket connections (they have their own logging)
+        is_websocket = request.url.path.startswith("/api/v1/ws/")
+
+        if not is_websocket:
+            # Log request
+            client_ip = request.client.host if request.client else "unknown"
+            logger.info(
+                f"Request: {request.method} {request.url.path} from {client_ip}"
+            )
 
         # Process request
         response = await call_next(request)
 
-        # Log response
-        duration = time.time() - start_time
-        logger.info(
-            f"Response: {request.method} {request.url.path} "
-            f"status={response.status_code} duration={duration:.3f}s"
-        )
+        if not is_websocket:
+            # Log response
+            duration = time.time() - start_time
+            logger.info(
+                f"Response: {request.method} {request.url.path} "
+                f"status={response.status_code} duration={duration:.3f}s"
+            )
 
         return response
