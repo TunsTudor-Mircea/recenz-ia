@@ -89,7 +89,8 @@ class SentimentAnalyzer:
             confidence = probabilities[0][prediction].item()
 
         # Map prediction to label
-        label_map = {0: "negative", 1: "neutral", 2: "positive"}
+        # Note: RoBERT Romanian model uses: 0=negative, 1=positive, 2=neutral
+        label_map = {0: "negative", 1: "positive", 2: "neutral"}
         sentiment_label = label_map.get(prediction, "unknown")
 
         return {
