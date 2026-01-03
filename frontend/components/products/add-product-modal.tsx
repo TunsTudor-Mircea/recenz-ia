@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,34 @@ export function AddProductModal({ onSuccess }: AddProductModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [job, setJob] = useState<ScrapingJob | null>(null)
   const { toast } = useToast()
+  const [pollIntervalId, setPollIntervalId] = useState<NodeJS.Timeout | null>(null)
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null)
+
+  // Cleanup polling intervals on unmount or dialog close
+  useEffect(() => {
+    return () => {
+      if (pollIntervalId) {
+        clearInterval(pollIntervalId)
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
+  }, [pollIntervalId, timeoutId])
+
+  // Clear polling when dialog closes
+  useEffect(() => {
+    if (!open) {
+      if (pollIntervalId) {
+        clearInterval(pollIntervalId)
+        setPollIntervalId(null)
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+        setTimeoutId(null)
+      }
+    }
+  }, [open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,46 +85,50 @@ export function AddProductModal({ onSuccess }: AddProductModalProps) {
         description: "Your product is being analyzed. This may take a few minutes.",
       })
 
-      // Poll for job status
+      // Poll for job status using the specific job ID
       const pollInterval = setInterval(async () => {
         try {
-          const jobResponse = await api.get<{ jobs: ScrapingJob[] }>("/api/v1/scraping/jobs?skip=0&limit=1")
-          const currentJob = jobResponse.data.jobs[0]
+          const jobResponse = await api.get<ScrapingJob>(`/api/v1/scraping/${response.data.id}`)
+          const currentJob = jobResponse.data
 
-          if (currentJob && currentJob.id === response.data.id) {
-            setJob(currentJob)
+          setJob(currentJob)
 
-            if (currentJob.status === "completed") {
-              clearInterval(pollInterval)
-              toast({
-                title: "Success",
-                description: `Successfully analyzed ${currentJob.reviews_created} reviews!`,
-              })
-              setIsLoading(false)
-              setTimeout(() => {
-                setOpen(false)
-                setUrl("")
-                setJob(null)
-                onSuccess?.()
-              }, 2000)
-            } else if (currentJob.status === "failed") {
-              clearInterval(pollInterval)
-              toast({
-                title: "Error",
-                description: currentJob.error_message || "Failed to scrape product",
-                variant: "destructive",
-              })
-              setIsLoading(false)
-            }
+          if (currentJob.status === "completed") {
+            clearInterval(pollInterval)
+            setPollIntervalId(null)
+            toast({
+              title: "Success",
+              description: `Successfully analyzed ${currentJob.reviews_created} reviews!`,
+            })
+            setIsLoading(false)
+            setTimeout(() => {
+              setOpen(false)
+              setUrl("")
+              setJob(null)
+              onSuccess?.()
+            }, 2000)
+          } else if (currentJob.status === "failed") {
+            clearInterval(pollInterval)
+            setPollIntervalId(null)
+            toast({
+              title: "Error",
+              description: currentJob.error_message || "Failed to scrape product",
+              variant: "destructive",
+            })
+            setIsLoading(false)
           }
         } catch (error) {
           console.error("[v0] Failed to poll job status:", error)
         }
       }, 3000)
 
+      setPollIntervalId(pollInterval)
+
       // Stop polling after 5 minutes
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         clearInterval(pollInterval)
+        setPollIntervalId(null)
+        setTimeoutId(null)
         if (isLoading) {
           setIsLoading(false)
           toast({
@@ -105,6 +137,8 @@ export function AddProductModal({ onSuccess }: AddProductModalProps) {
           })
         }
       }, 300000)
+
+      setTimeoutId(timeout)
     } catch (error: unknown) {
       const errorMessage =
         error && typeof error === "object" && "response" in error

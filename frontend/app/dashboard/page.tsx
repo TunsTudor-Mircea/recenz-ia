@@ -12,12 +12,14 @@ import { isAuthenticated } from "@/lib/auth"
 import api from "@/lib/api"
 import type { AnalyticsSummary } from "@/types/api"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const { toast } = useToast()
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -31,6 +33,11 @@ export default function DashboardPage() {
         setSummary(response.data)
       } catch (error) {
         console.error("[v0] Failed to fetch summary:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load analytics summary. Please try again.",
+          variant: "destructive",
+        })
       } finally {
         setIsLoading(false)
       }

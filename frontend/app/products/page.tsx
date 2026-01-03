@@ -8,6 +8,7 @@ import { ProductCard } from "@/components/products/product-card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/hooks/use-toast"
 import { Search, Package } from "lucide-react"
 import { isAuthenticated } from "@/lib/auth"
 import api from "@/lib/api"
@@ -28,16 +29,31 @@ function ProductsContent() {
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("name")
   const router = useRouter()
+  const { toast } = useToast()
 
   const fetchProducts = async () => {
     try {
       setIsLoading(true)
-      const response = await api.get<{ reviews: Review[] }>("/api/v1/reviews/?skip=0&limit=1000")
+
+      // Backend has a max limit of 100, so we need to fetch in batches
+      let allReviews: Review[] = []
+      let skip = 0
+      const limit = 100
+      let hasMore = true
+
+      while (hasMore) {
+        const response = await api.get<{ reviews: Review[]; total: number }>(
+          `/api/v1/reviews/?skip=${skip}&limit=${limit}`
+        )
+        allReviews = [...allReviews, ...response.data.reviews]
+        skip += limit
+        hasMore = response.data.reviews.length === limit
+      }
 
       // Group by product name and aggregate stats
       const productMap = new Map<string, ProductSummary>()
 
-      response.data.reviews.forEach((review) => {
+      allReviews.forEach((review) => {
         const existing = productMap.get(review.product_name)
 
         if (existing) {
@@ -70,6 +86,11 @@ function ProductsContent() {
       setFilteredProducts(productsList)
     } catch (error) {
       console.error("[v0] Failed to fetch products:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load products. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
