@@ -56,10 +56,12 @@ class SentimentAnalyzer:
 
             # Load preprocessor and selector if paths are provided
             if settings.XGBOOST_PREPROCESSOR_PATH and os.path.exists(settings.XGBOOST_PREPROCESSOR_PATH):
-                self.xgboost_preprocessor = joblib.load(settings.XGBOOST_PREPROCESSOR_PATH)
+                from preprocessing.pipeline import PreprocessingPipeline
+                self.xgboost_preprocessor = PreprocessingPipeline.load(settings.XGBOOST_PREPROCESSOR_PATH)
 
             if settings.XGBOOST_SELECTOR_PATH and os.path.exists(settings.XGBOOST_SELECTOR_PATH):
-                self.xgboost_selector = joblib.load(settings.XGBOOST_SELECTOR_PATH)
+                from features.selector import FeatureSelector
+                self.xgboost_selector = FeatureSelector.load(settings.XGBOOST_SELECTOR_PATH)
 
     def analyze_with_robert(self, text: str) -> Dict[str, any]:
         """
@@ -127,8 +129,8 @@ class SentimentAnalyzer:
             probabilities = self.xgboost_model.predict_proba(text_features)[0]
             confidence = float(np.max(probabilities))
 
-            # Map prediction to label
-            label_map = {0: "negative", 1: "neutral", 2: "positive"}
+            # Map prediction to label (binary classification: 0=negative, 1=positive)
+            label_map = {0: "negative", 1: "positive"}
             sentiment_label = label_map.get(int(prediction), "unknown")
 
             return {

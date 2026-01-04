@@ -26,7 +26,7 @@ from app.services.sentiment import sentiment_analyzer
     retry_backoff_max=600,  # Max 10 minutes between retries
     retry_jitter=True  # Add random jitter to prevent thundering herd
 )
-def scrape_product_reviews(self, job_id: str, url: str, site_type: Optional[str], user_id: str):
+def scrape_product_reviews(self, job_id: str, url: str, site_type: Optional[str], user_id: str, model_type: str = 'robert'):
     """
     Scrape reviews from a product page and save them to the database.
 
@@ -35,6 +35,7 @@ def scrape_product_reviews(self, job_id: str, url: str, site_type: Optional[str]
         url: URL of the product page
         site_type: Optional site type (emag, cel, etc.)
         user_id: UUID of the user who created the job
+        model_type: Sentiment analysis model to use (robert or xgboost)
     """
     db: Session = SessionLocal()
 
@@ -99,10 +100,10 @@ def scrape_product_reviews(self, job_id: str, url: str, site_type: Optional[str]
                     reviews_skipped_duplicates += 1
                     continue
 
-                # Analyze sentiment
+                # Analyze sentiment using selected model
                 sentiment_result = sentiment_analyzer.analyze(
                     text=review_data.review_text,
-                    model='robert'  # Use RoBERT by default
+                    model=model_type
                 )
 
                 # Create review with content hash

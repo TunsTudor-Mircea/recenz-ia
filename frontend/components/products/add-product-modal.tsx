@@ -15,6 +15,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { useScrapingJobWS } from "@/hooks/use-scraping-job-ws"
 import api from "@/lib/api"
@@ -28,6 +35,7 @@ interface AddProductModalProps {
 export function AddProductModal({ onSuccess }: AddProductModalProps) {
   const [open, setOpen] = useState(false)
   const [url, setUrl] = useState("")
+  const [modelType, setModelType] = useState("robert")
   const [isLoading, setIsLoading] = useState(false)
   const [jobId, setJobId] = useState<string | null>(null)
   const { toast } = useToast()
@@ -86,6 +94,7 @@ export function AddProductModal({ onSuccess }: AddProductModalProps) {
       const response = await api.post<ScrapingJob>("/api/v1/scraping/", {
         url,
         site_type: "emag",
+        model_type: modelType,
       })
 
       // Set job ID to trigger WebSocket connection
@@ -146,6 +155,24 @@ export function AddProductModal({ onSuccess }: AddProductModalProps) {
                 required
                 disabled={isLoading}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="model">Analysis Model</Label>
+              <Select value={modelType} onValueChange={setModelType} disabled={isLoading}>
+                <SelectTrigger id="model">
+                  <SelectValue placeholder="Select model" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="robert">RoBERT (Recommended - More Accurate)</SelectItem>
+                  <SelectItem value="xgboost">XGBoost (Faster)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {modelType === "robert"
+                  ? "RoBERT: Deep learning model optimized for Romanian text. More accurate but slower."
+                  : "XGBoost: Traditional ML model. Faster processing but slightly less accurate."}
+              </p>
             </div>
 
             {job && (

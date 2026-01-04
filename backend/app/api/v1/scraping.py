@@ -51,7 +51,8 @@ def create_scraping_job(
         job_id=str(job.id),
         url=job_data.url,
         site_type=job_data.site_type,
-        user_id=str(current_user.id)
+        user_id=str(current_user.id),
+        model_type=job_data.model_type
     )
 
     return job

@@ -45,6 +45,9 @@ services:
       SECRET_KEY: dev-secret-key-change-in-production
       ROBERT_MODEL_PATH: /models/robert/quick_test/robert_model
       XGBOOST_MODEL_PATH: /models/xgboost/xgb_optimized2/xgboost_model.joblib
+      XGBOOST_PREPROCESSOR_PATH: /models/xgboost/xgb_optimized2/preprocessor.joblib
+      XGBOOST_SELECTOR_PATH: /models/xgboost/xgb_optimized2/feature_selector.joblib
+      PYTHONPATH: /app
       DEBUG: "True"
     depends_on:
       postgres:
@@ -69,6 +72,9 @@ services:
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       ROBERT_MODEL_PATH: /models/robert/quick_test/robert_model
       XGBOOST_MODEL_PATH: /models/xgboost/xgb_optimized2/xgboost_model.joblib
+      XGBOOST_PREPROCESSOR_PATH: /models/xgboost/xgb_optimized2/preprocessor.joblib
+      XGBOOST_SELECTOR_PATH: /models/xgboost/xgb_optimized2/feature_selector.joblib
+      PYTHONPATH: /app
       DEBUG: "True"
     depends_on:
       postgres:
