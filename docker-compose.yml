@@ -45,10 +45,10 @@ services:
       DATABASE_URL: postgresql://recenzia:recenzia_pass@postgres:5432/recenzia
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: dev-secret-key-change-in-production
-      ROBERT_MODEL_PATH: /models/robert/quick_test/robert_model
-      XGBOOST_MODEL_PATH: /models/xgboost/xgb_optimized2/xgboost_model.joblib
-      XGBOOST_PREPROCESSOR_PATH: /models/xgboost/xgb_optimized2/preprocessor.joblib
-      XGBOOST_SELECTOR_PATH: /models/xgboost/xgb_optimized2/feature_selector.joblib
+      ROBERT_MODEL_PATH: /models/robert/v1/robert_model
+      XGBOOST_MODEL_PATH: /models/xgboost/v1/xgboost_model.joblib
+      XGBOOST_PREPROCESSOR_PATH: /models/xgboost/v1/preprocessor.joblib
+      XGBOOST_SELECTOR_PATH: /models/xgboost/v1/feature_selector.joblib
       PYTHONPATH: /app:/app/app
       DEBUG: "True"
     depends_on:
@@ -72,10 +72,10 @@ services:
       SECRET_KEY: dev-secret-key-change-in-production
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
-      ROBERT_MODEL_PATH: /models/robert/quick_test/robert_model
-      XGBOOST_MODEL_PATH: /models/xgboost/xgb_optimized2/xgboost_model.joblib
-      XGBOOST_PREPROCESSOR_PATH: /models/xgboost/xgb_optimized2/preprocessor.joblib
-      XGBOOST_SELECTOR_PATH: /models/xgboost/xgb_optimized2/feature_selector.joblib
+      ROBERT_MODEL_PATH: /models/robert/v1/robert_model
+      XGBOOST_MODEL_PATH: /models/xgboost/v1/xgboost_model.joblib
+      XGBOOST_PREPROCESSOR_PATH: /models/xgboost/v1/preprocessor.joblib
+      XGBOOST_SELECTOR_PATH: /models/xgboost/v1/feature_selector.joblib
       PYTHONPATH: /app:/app/app
       DEBUG: "True"
     depends_on:

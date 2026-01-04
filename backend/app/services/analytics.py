@@ -23,30 +23,41 @@ class AnalyticsService:
     """Service for generating review analytics and insights."""
 
     @staticmethod
-    def get_product_analytics(db: Session, product_name: str) -> Optional[ProductAnalytics]:
+    def get_product_analytics(db: Session, product_name: str, user_id: Optional[str] = None) -> Optional[ProductAnalytics]:
         """
         Get comprehensive analytics for a specific product.
 
         Args:
             db: Database session
             product_name: Name of the product
+            user_id: Optional user ID to filter reviews
 
         Returns:
             ProductAnalytics object or None if product not found
         """
+        from loguru import logger
+        logger.info(f"SERVICE: get_product_analytics called with product_name={product_name}, user_id={user_id}")
+
         # Get all reviews for the product
-        reviews = db.query(Review).filter(Review.product_name == product_name).all()
+        query = db.query(Review).filter(Review.product_name == product_name)
+        if user_id:
+            query = query.filter(Review.user_id == user_id)
+        reviews = query.all()
+
+        logger.info(f"SERVICE: Found {len(reviews)} reviews")
 
         if not reviews:
+            logger.info("SERVICE: Returning None - no reviews found")
             return None
 
         # Calculate sentiment distribution
-        sentiment_counts = db.query(
+        sentiment_query = db.query(
             Review.sentiment_label,
             func.count(Review.id)
-        ).filter(
-            Review.product_name == product_name
-        ).group_by(Review.sentiment_label).all()
+        ).filter(Review.product_name == product_name)
+        if user_id:
+            sentiment_query = sentiment_query.filter(Review.user_id == user_id)
+        sentiment_counts = sentiment_query.group_by(Review.sentiment_label).all()
 
         sentiment_dict = {label: count for label, count in sentiment_counts}
         sentiment_distribution = SentimentDistribution(
@@ -57,17 +68,19 @@ class AnalyticsService:
         )
 
         # Calculate rating distribution
-        rating_counts = db.query(
+        rating_query = db.query(
             Review.rating,
             func.count(Review.id)
-        ).filter(
-            Review.product_name == product_name
-        ).group_by(Review.rating).all()
+        ).filter(Review.product_name == product_name)
+        if user_id:
+            rating_query = rating_query.filter(Review.user_id == user_id)
+        rating_counts = rating_query.group_by(Review.rating).all()
 
         rating_dict = {rating: count for rating, count in rating_counts}
-        avg_rating = db.query(func.avg(Review.rating)).filter(
-            Review.product_name == product_name
-        ).scalar() or 0.0
+        avg_rating_query = db.query(func.avg(Review.rating)).filter(Review.product_name == product_name)
+        if user_id:
+            avg_rating_query = avg_rating_query.filter(Review.user_id == user_id)
+        avg_rating = avg_rating_query.scalar() or 0.0
 
         rating_distribution = RatingDistribution(
             rating_1=rating_dict.get(1, 0),
@@ -80,17 +93,19 @@ class AnalyticsService:
         )
 
         # Calculate average sentiment score
-        avg_sentiment = db.query(func.avg(Review.sentiment_score)).filter(
-            Review.product_name == product_name
-        ).scalar() or 0.0
+        avg_sentiment_query = db.query(func.avg(Review.sentiment_score)).filter(Review.product_name == product_name)
+        if user_id:
+            avg_sentiment_query = avg_sentiment_query.filter(Review.user_id == user_id)
+        avg_sentiment = avg_sentiment_query.scalar() or 0.0
 
         # Get date range
-        date_stats = db.query(
+        date_stats_query = db.query(
             func.min(Review.review_date),
             func.max(Review.review_date)
-        ).filter(
-            Review.product_name == product_name
-        ).first()
+        ).filter(Review.product_name == product_name)
+        if user_id:
+            date_stats_query = date_stats_query.filter(Review.user_id == user_id)
+        date_stats = date_stats_query.first()
 
         return ProductAnalytics(
             product_name=product_name,
@@ -173,7 +188,8 @@ class AnalyticsService:
         db: Session,
         product_name: str,
         period: str = 'day',
-        days: int = 30
+        days: int = 30,
+        user_id: Optional[str] = None
     ) -> Optional[ProductTrend]:
         """
         Get trend data for a product over time.
@@ -183,12 +199,16 @@ class AnalyticsService:
             product_name: Name of the product
             period: Grouping period ('day', 'week', 'month')
             days: Number of days to include in the trend
+            user_id: Optional user ID to filter reviews
 
         Returns:
             ProductTrend object or None if product not found
         """
         # Check if product exists
-        product_exists = db.query(Review).filter(Review.product_name == product_name).first()
+        product_query = db.query(Review).filter(Review.product_name == product_name)
+        if user_id:
+            product_query = product_query.filter(Review.user_id == user_id)
+        product_exists = product_query.first()
         if not product_exists:
             return None
 
@@ -197,11 +217,14 @@ class AnalyticsService:
         start_date = end_date - timedelta(days=days)
 
         # Query reviews within date range
-        reviews = db.query(Review).filter(
+        reviews_query = db.query(Review).filter(
             Review.product_name == product_name,
             Review.review_date >= start_date,
             Review.review_date <= end_date
-        ).all()
+        )
+        if user_id:
+            reviews_query = reviews_query.filter(Review.user_id == user_id)
+        reviews = reviews_query.all()
 
         # Group reviews by period
         data_points = []

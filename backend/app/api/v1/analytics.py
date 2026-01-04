@@ -33,29 +33,6 @@ def get_analytics_summary(
     return analytics_service.get_overall_summary(db)
 
 
-@router.get("/products/{product_name}", response_model=ProductAnalytics)
-def get_product_analytics(
-    product_name: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Get comprehensive analytics for a specific product.
-
-    Args:
-        product_name: Name of the product
-
-    Returns:
-        Product analytics including ratings, sentiment, and trends
-    """
-    analytics = analytics_service.get_product_analytics(db, product_name)
-
-    if not analytics:
-        raise HTTPException(status_code=404, detail=f"No reviews found for product: {product_name}")
-
-    return analytics
-
-
 @router.get("/products/{product_name}/trend", response_model=ProductTrend)
 def get_product_trend(
     product_name: str,
@@ -75,12 +52,37 @@ def get_product_trend(
     Returns:
         Trend data showing review counts and sentiment over time
     """
-    trend = analytics_service.get_product_trend(db, product_name, period, days)
+    trend = analytics_service.get_product_trend(db, product_name, period, days, str(current_user.id))
 
     if not trend:
         raise HTTPException(status_code=404, detail=f"No reviews found for product: {product_name}")
 
     return trend
+
+
+@router.get("/products/{product_name:path}", response_model=ProductAnalytics)
+def get_product_analytics(
+    product_name: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get comprehensive analytics for a specific product.
+
+    Args:
+        product_name: Name of the product
+
+    Returns:
+        Product analytics including ratings, sentiment, and trends
+    """
+    print(f"[ANALYTICS ENDPOINT] Getting analytics for product: {product_name}, user_id: {current_user.id}")
+    analytics = analytics_service.get_product_analytics(db, product_name, str(current_user.id))
+    print(f"[ANALYTICS ENDPOINT] Analytics result: {analytics}")
+
+    if not analytics:
+        raise HTTPException(status_code=404, detail=f"No reviews found for product: {product_name}")
+
+    return analytics
 
 
 @router.get("/top-reviews", response_model=List[TopReview])
