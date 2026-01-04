@@ -129,8 +129,8 @@ class SentimentAnalyzer:
             probabilities = self.xgboost_model.predict_proba(text_features)[0]
             confidence = float(np.max(probabilities))
 
-            # Map prediction to label (binary classification: 0=negative, 1=positive)
-            label_map = {0: "negative", 1: "positive"}
+            # Map prediction to label (binary classification: 0=positive, 1=negative)
+            label_map = {0: "positive", 1: "negative"}
             sentiment_label = label_map.get(int(prediction), "unknown")
 
             return {
