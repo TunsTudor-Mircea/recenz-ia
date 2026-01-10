@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     SVM_MODEL_PATH: str = ""
     SVM_PREPROCESSOR_PATH: str = ""
     SVM_VECTORIZER_PATH: str = ""
+    LR_MODEL_PATH: str = ""
+    LR_PREPROCESSOR_PATH: str = ""
+    LR_VECTORIZER_PATH: str = ""
 
     # Celery
     CELERY_BROKER_URL: str = "redis://redis:6379/0"

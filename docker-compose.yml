@@ -49,9 +49,12 @@ services:
       XGBOOST_MODEL_PATH: /models/xgboost/v3/xgboost_model.joblib
       XGBOOST_PREPROCESSOR_PATH: /models/xgboost/v3/preprocessor.joblib
       XGBOOST_SELECTOR_PATH: /models/xgboost/v3/feature_selector.joblib
-      SVM_MODEL_PATH: /models/svm/v1/svm_model.joblib
-      SVM_PREPROCESSOR_PATH: /models/svm/v1/preprocessor.joblib
-      SVM_VECTORIZER_PATH: /models/svm/v1/tfidf_vectorizer.joblib
+      SVM_MODEL_PATH: /models/svm/v2/svm_model.joblib
+      SVM_PREPROCESSOR_PATH: /models/svm/v2/preprocessor.joblib
+      SVM_VECTORIZER_PATH: /models/svm/v2/tfidf_vectorizer.joblib
+      LR_MODEL_PATH: /models/lr/v1/logistic_regression_model.joblib
+      LR_PREPROCESSOR_PATH: /models/lr/v1/preprocessor.joblib
+      LR_VECTORIZER_PATH: /models/lr/v1/tfidf_vectorizer.joblib
       PYTHONPATH: /app:/app/app
       DEBUG: "True"
     depends_on:
@@ -79,9 +82,12 @@ services:
       XGBOOST_MODEL_PATH: /models/xgboost/v3/xgboost_model.joblib
       XGBOOST_PREPROCESSOR_PATH: /models/xgboost/v3/preprocessor.joblib
       XGBOOST_SELECTOR_PATH: /models/xgboost/v3/feature_selector.joblib
-      SVM_MODEL_PATH: /models/svm/v1/svm_model.joblib
-      SVM_PREPROCESSOR_PATH: /models/svm/v1/preprocessor.joblib
-      SVM_VECTORIZER_PATH: /models/svm/v1/tfidf_vectorizer.joblib
+      SVM_MODEL_PATH: /models/svm/v2/svm_model.joblib
+      SVM_PREPROCESSOR_PATH: /models/svm/v2/preprocessor.joblib
+      SVM_VECTORIZER_PATH: /models/svm/v2/tfidf_vectorizer.joblib
+      LR_MODEL_PATH: /models/lr/v1/logistic_regression_model.joblib
+      LR_PREPROCESSOR_PATH: /models/lr/v1/preprocessor.joblib
+      LR_VECTORIZER_PATH: /models/lr/v1/tfidf_vectorizer.joblib
       PYTHONPATH: /app:/app/app
       DEBUG: "True"
     depends_on:

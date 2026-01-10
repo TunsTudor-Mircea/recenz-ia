@@ -164,14 +164,17 @@ export function AddProductModal({ onSuccess }: AddProductModalProps) {
                   <SelectValue placeholder="Select model" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="robert">RoBERT (Recommended - More Accurate)</SelectItem>
+                  <SelectItem value="robert">RoBERT (Recommended - Most Accurate)</SelectItem>
+                  <SelectItem value="lr">Logistic Regression (Very Fast & Accurate)</SelectItem>
                   <SelectItem value="xgboost">XGBoost (Fast)</SelectItem>
-                  <SelectItem value="svm">SVM (Fastest - Baseline)</SelectItem>
+                  <SelectItem value="svm">SVM (Fast - Baseline)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
                 {modelType === "robert"
-                  ? "RoBERT: Deep learning model optimized for Romanian text. More accurate but slower."
+                  ? "RoBERT: Deep learning model optimized for Romanian text. Most accurate but slower."
+                  : modelType === "lr"
+                  ? "Logistic Regression: Fast classical ML model with excellent accuracy (96.4%)."
                   : modelType === "xgboost"
                   ? "XGBoost: Traditional ML model. Balanced speed and accuracy."
                   : "SVM: Fast baseline model with good performance on clear sentiment."}

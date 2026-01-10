@@ -50,6 +50,7 @@ def main():
     parser = argparse.ArgumentParser(description='Train SVM sentiment model (no IGWO)')
     parser.add_argument('--experiment-name', type=str, default=f'svm_full_{datetime.now().strftime("%Y%m%d_%H%M%S")}')
     parser.add_argument('--C', type=float, default=1.0, help='SVM regularization parameter')
+    parser.add_argument('--grid-search', action='store_true', help='Perform grid search over C values')
     args = parser.parse_args()
 
     logger.info("="*80)
@@ -115,7 +116,8 @@ def main():
         max_df=lf_micf_config.get('max_df', 0.9),
         sublinear_tf=True,
         use_idf=True,
-        smooth_idf=True
+        smooth_idf=True,
+        ngram_range=(1, 2)  # Include bigrams
     )
     
     X_train = vectorizer.fit_transform(train_preprocessed)

@@ -23,6 +23,9 @@ class SentimentAnalyzer:
         self.svm_model = None
         self.svm_preprocessor = None
         self.svm_vectorizer = None
+        self.lr_model = None
+        self.lr_preprocessor = None
+        self.lr_vectorizer = None
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def load_robert_model(self):
@@ -83,6 +86,23 @@ class SentimentAnalyzer:
             # Load vectorizer (TfidfVectorizer for SVM)
             if settings.SVM_VECTORIZER_PATH and os.path.exists(settings.SVM_VECTORIZER_PATH):
                 self.svm_vectorizer = joblib.load(settings.SVM_VECTORIZER_PATH)
+
+    def load_lr_model(self):
+        """Load Logistic Regression model."""
+        if self.lr_model is None:
+            model_path = settings.LR_MODEL_PATH
+            if not model_path or not os.path.exists(model_path):
+                raise FileNotFoundError(f"Logistic Regression model not found at {model_path}")
+
+            self.lr_model = joblib.load(model_path)
+
+            # Load preprocessor
+            if settings.LR_PREPROCESSOR_PATH and os.path.exists(settings.LR_PREPROCESSOR_PATH):
+                self.lr_preprocessor = joblib.load(settings.LR_PREPROCESSOR_PATH)
+
+            # Load vectorizer (TfidfVectorizer for LR)
+            if settings.LR_VECTORIZER_PATH and os.path.exists(settings.LR_VECTORIZER_PATH):
+                self.lr_vectorizer = joblib.load(settings.LR_VECTORIZER_PATH)
 
     def analyze_with_robert(self, text: str) -> Dict[str, any]:
         """
@@ -205,17 +225,59 @@ class SentimentAnalyzer:
         except Exception as e:
             raise Exception(f"SVM analysis failed: {str(e)}")
 
+    def analyze_with_lr(self, text: str) -> Dict[str, any]:
+        """
+        Analyze sentiment using Logistic Regression model.
+
+        Args:
+            text: Review text to analyze
+
+        Returns:
+            Dictionary with sentiment label and confidence score
+        """
+        try:
+            self.load_lr_model()
+
+            # Preprocess text
+            if self.lr_preprocessor:
+                text_features = self.lr_preprocessor.transform([text])
+            else:
+                raise Exception("Logistic Regression preprocessor not available. The model requires a preprocessor to function correctly.")
+
+            # Apply TF-IDF vectorization
+            if self.lr_vectorizer:
+                text_features = self.lr_vectorizer.transform(text_features)
+            else:
+                raise Exception("Logistic Regression vectorizer not available. The model requires a TF-IDF vectorizer to function correctly.")
+
+            # Make prediction
+            prediction = self.lr_model.predict(text_features)[0]
+            probabilities = self.lr_model.predict_proba(text_features)[0]
+            confidence = float(np.max(probabilities))
+
+            # Map prediction to label (binary classification: 0=negative, 1=positive)
+            label_map = {0: "negative", 1: "positive"}
+            sentiment_label = label_map.get(int(prediction), "unknown")
+
+            return {
+                "sentiment_label": sentiment_label,
+                "sentiment_score": confidence,
+                "model_used": "lr"
+            }
+        except Exception as e:
+            raise Exception(f"Logistic Regression analysis failed: {str(e)}")
+
     def analyze(
         self,
         text: str,
-        model: Literal["robert", "xgboost", "svm"] = "robert"
+        model: Literal["robert", "xgboost", "svm", "lr"] = "robert"
     ) -> Dict[str, any]:
         """
         Analyze sentiment using specified model.
 
         Args:
             text: Review text to analyze
-            model: Model to use ("robert", "xgboost", or "svm")
+            model: Model to use ("robert", "xgboost", "svm", or "lr")
 
         Returns:
             Dictionary with sentiment label and confidence score
@@ -226,6 +288,8 @@ class SentimentAnalyzer:
             return self.analyze_with_xgboost(text)
         elif model == "svm":
             return self.analyze_with_svm(text)
+        elif model == "lr":
+            return self.analyze_with_lr(text)
         else:
             raise ValueError(f"Unknown model: {model}")
 
