@@ -20,6 +20,9 @@ class SentimentAnalyzer:
         self.xgboost_model = None
         self.xgboost_preprocessor = None
         self.xgboost_selector = None
+        self.svm_model = None
+        self.svm_preprocessor = None
+        self.svm_vectorizer = None
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def load_robert_model(self):
@@ -62,6 +65,24 @@ class SentimentAnalyzer:
             if settings.XGBOOST_SELECTOR_PATH and os.path.exists(settings.XGBOOST_SELECTOR_PATH):
                 from features.selector import FeatureSelector
                 self.xgboost_selector = FeatureSelector.load(settings.XGBOOST_SELECTOR_PATH)
+
+    def load_svm_model(self):
+        """Load SVM model."""
+        if self.svm_model is None:
+            model_path = settings.SVM_MODEL_PATH
+            if not model_path or not os.path.exists(model_path):
+                raise FileNotFoundError(f"SVM model not found at {model_path}")
+
+            self.svm_model = joblib.load(model_path)
+
+            # Load preprocessor
+            if settings.SVM_PREPROCESSOR_PATH and os.path.exists(settings.SVM_PREPROCESSOR_PATH):
+                from preprocessing.pipeline import PreprocessingPipeline
+                self.svm_preprocessor = PreprocessingPipeline.load(settings.SVM_PREPROCESSOR_PATH)
+
+            # Load vectorizer (TfidfVectorizer for SVM)
+            if settings.SVM_VECTORIZER_PATH and os.path.exists(settings.SVM_VECTORIZER_PATH):
+                self.svm_vectorizer = joblib.load(settings.SVM_VECTORIZER_PATH)
 
     def analyze_with_robert(self, text: str) -> Dict[str, any]:
         """
@@ -142,17 +163,59 @@ class SentimentAnalyzer:
             # If XGBoost fails completely, raise a clear error
             raise Exception(f"XGBoost analysis failed: {str(e)}")
 
+    def analyze_with_svm(self, text: str) -> Dict[str, any]:
+        """
+        Analyze sentiment using SVM model.
+
+        Args:
+            text: Review text to analyze
+
+        Returns:
+            Dictionary with sentiment label and confidence score
+        """
+        try:
+            self.load_svm_model()
+
+            # Preprocess text
+            if self.svm_preprocessor:
+                text_features = self.svm_preprocessor.transform([text])
+            else:
+                raise Exception("SVM preprocessor not available. The model requires a preprocessor to function correctly.")
+
+            # Apply TF-IDF vectorization
+            if self.svm_vectorizer:
+                text_features = self.svm_vectorizer.transform(text_features)
+            else:
+                raise Exception("SVM vectorizer not available. The model requires a TF-IDF vectorizer to function correctly.")
+
+            # Make prediction
+            prediction = self.svm_model.predict(text_features)[0]
+            probabilities = self.svm_model.predict_proba(text_features)[0]
+            confidence = float(np.max(probabilities))
+
+            # Map prediction to label (binary classification: 0=negative, 1=positive)
+            label_map = {0: "negative", 1: "positive"}
+            sentiment_label = label_map.get(int(prediction), "unknown")
+
+            return {
+                "sentiment_label": sentiment_label,
+                "sentiment_score": confidence,
+                "model_used": "svm"
+            }
+        except Exception as e:
+            raise Exception(f"SVM analysis failed: {str(e)}")
+
     def analyze(
         self,
         text: str,
-        model: Literal["robert", "xgboost"] = "robert"
+        model: Literal["robert", "xgboost", "svm"] = "robert"
     ) -> Dict[str, any]:
         """
         Analyze sentiment using specified model.
 
         Args:
             text: Review text to analyze
-            model: Model to use ("robert" or "xgboost")
+            model: Model to use ("robert", "xgboost", or "svm")
 
         Returns:
             Dictionary with sentiment label and confidence score
@@ -161,6 +224,8 @@ class SentimentAnalyzer:
             return self.analyze_with_robert(text)
         elif model == "xgboost":
             return self.analyze_with_xgboost(text)
+        elif model == "svm":
+            return self.analyze_with_svm(text)
         else:
             raise ValueError(f"Unknown model: {model}")
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """
-XGBoost training script - faster and better for TF-IDF features.
+SVM training script for sentiment classification.
 
-This script uses the same preprocessing and feature selection (IGWO),
-but replaces LSTM with XGBoost for much better results.
+This script trains a Support Vector Machine classifier using the same
+preprocessing and feature selection pipeline as XGBoost for direct comparison.
 """
 
 import matplotlib
@@ -16,6 +16,10 @@ from pathlib import Path
 import json
 from datetime import datetime
 from sklearn.model_selection import train_test_split
+from sklearn.svm import LinearSVC
+from sklearn.calibration import CalibratedClassifierCV
+import numpy as np
+import joblib
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
@@ -25,7 +29,6 @@ from utils.logger import setup_logger
 from utils.reproducibility import set_seed
 from preprocessing.pipeline import PreprocessingPipeline
 from features.selector import FeatureSelector
-from models.xgboost_model import XGBoostModel
 from evaluation.metrics import calculate_metrics
 from evaluation.visualizer import (
     plot_confusion_matrix,
@@ -35,21 +38,23 @@ from evaluation.visualizer import (
 
 # Set up logging
 logger = setup_logger(
-    name='train_xgboost',
+    name='train_svm',
     log_dir=Path('logs'),
-    log_filename=f'train_xgboost_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log',
+    log_filename=f'train_svm_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log',
     level=logging.INFO
 )
 
 
 def main():
-    """Main training function."""
-    parser = argparse.ArgumentParser(description='Train XGBoost sentiment model')
-    parser.add_argument('--experiment-name', type=str, default=f'xgb_{datetime.now().strftime("%Y%m%d_%H%M%S")}')
+    """Main training function for SVM."""
+    parser = argparse.ArgumentParser(description='Train SVM sentiment model')
+    parser.add_argument('--experiment-name', type=str, default=f'svm_{datetime.now().strftime("%Y%m%d_%H%M%S")}')
+    parser.add_argument('--C', type=float, default=1.0, help='SVM regularization parameter')
+    parser.add_argument('--grid-search', action='store_true', help='Perform grid search over C values')
     args = parser.parse_args()
 
     logger.info("="*80)
-    logger.info("XGBOOST SENTIMENT ANALYSIS TRAINING")
+    logger.info("SVM SENTIMENT ANALYSIS TRAINING")
     logger.info("="*80)
     logger.info(f"Experiment name: {args.experiment_name}")
 
@@ -69,7 +74,6 @@ def main():
     logger.info("Loading dataset...")
     from huggingface_hub import hf_hub_download
     import pandas as pd
-    import numpy as np
 
     train_file = hf_hub_download(
         repo_id="universityofbucharest/laroseda",
@@ -103,33 +107,32 @@ def main():
     # Save preprocessor
     preprocessor.save(experiment_dir / 'preprocessor.joblib')
 
-    # Feature extraction and selection
-    logger.info("Extracting and selecting features with IGWO...")
+    # Feature extraction and selection using config
+    logger.info("Extracting and selecting features with IGWO from config...")
+    lf_micf_config = feature_config.get('lf_micf', {})
+    igwo_config = feature_config.get('igwo', {})
+    
     selector = FeatureSelector(
         extractor_params={
-            'min_df': feature_config['lf_micf']['min_df'],
-            'max_df': feature_config['lf_micf']['max_df'],
+            'min_df': lf_micf_config.get('min_df', 5),
+            'max_df': lf_micf_config.get('max_df', 0.8),
         },
         selector_params={
-            'n_wolves': feature_config['igwo']['n_wolves'],
-            'n_iterations': feature_config['igwo']['n_iterations'],
-            'inertia_weight': feature_config['igwo']['inertia_weight'],
-            'target_features': feature_config['igwo']['target_features'],
-            'cv_folds': feature_config['igwo']['fitness_cv_folds'],
-            'random_state': feature_config['igwo']['random_state'],
+            'n_wolves': igwo_config.get('n_wolves', 10),
+            'n_iterations': igwo_config.get('n_iterations', 20),
+            'inertia_weight': igwo_config.get('inertia_weight', 0.9),
+            'target_features': igwo_config.get('target_features', 800),
+            'cv_folds': igwo_config.get('fitness_cv_folds', 3),
+            'random_state': igwo_config.get('random_state', 42),
         }
     )
 
-    # Use sample for IGWO
-    sample_size = feature_config['igwo'].get('sample_size', 1000)
-    if len(train_preprocessed) > sample_size:
-        import numpy as np
-        indices = np.random.RandomState(42).choice(len(train_preprocessed), sample_size, replace=False)
-        sample_texts = [train_preprocessed[i] for i in indices]
-        sample_labels = train_labels[indices]
-    else:
-        sample_texts = train_preprocessed
-        sample_labels = train_labels
+    # Use sample size from config
+    sample_size = igwo_config.get('sample_size', 1000)
+    logger.info(f"Using sample_size={sample_size} for IGWO feature selection")
+    indices = np.random.RandomState(42).choice(len(train_preprocessed), min(sample_size, len(train_preprocessed)), replace=False)
+    sample_texts = [train_preprocessed[i] for i in indices]
+    sample_labels = train_labels[indices]
 
     selector.fit(sample_texts, sample_labels, verbose=True)
 
@@ -147,25 +150,65 @@ def main():
         X_train, train_labels, test_size=0.2, random_state=42, stratify=train_labels
     )
 
-    # Train XGBoost
-    logger.info("Training XGBoost model...")
-    model = XGBoostModel(
-        hyperparams={
-            'n_estimators': 200,
-            'max_depth': 8,
-            'learning_rate': 0.1,
-            'subsample': 0.8,
-            'colsample_bytree': 0.8
-        },
-        n_classes=2
+    # Grid search or single C value
+    if args.grid_search:
+        logger.info("Performing grid search over C values...")
+        C_values = [0.01, 0.1, 0.5, 1.0, 5.0, 10.0]
+        best_C = None
+        best_val_acc = 0.0
+        results = {}
+        
+        for C in C_values:
+            logger.info(f"  Testing C={C}...")
+            svm = LinearSVC(C=C, max_iter=1000, random_state=42, dual=False)
+            svm.fit(X_train_split, y_train_split)
+            
+            # Quick validation accuracy check
+            val_acc = svm.score(X_val, y_val)
+            results[C] = val_acc
+            logger.info(f"    Validation accuracy: {val_acc:.4f}")
+            
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
+                best_C = C
+        
+        logger.info(f"\nGrid search results:")
+        for C, acc in results.items():
+            logger.info(f"  C={C}: {acc:.4f}")
+        logger.info(f"\nBest C: {best_C} with validation accuracy: {best_val_acc:.4f}")
+        
+        # Save grid search results
+        with open(experiment_dir / 'grid_search_results.json', 'w') as f:
+            json.dump({'results': {str(k): v for k, v in results.items()}, 'best_C': best_C, 'best_val_acc': best_val_acc}, f, indent=2)
+        
+        final_C = best_C
+        logger.info(f"\nTraining final model with C={final_C}...")
+    else:
+        final_C = args.C
+        logger.info(f"Training LinearSVC with C={final_C}...")
+
+    # Train final SVM
+    svm = LinearSVC(
+        C=final_C,
+        max_iter=1000,
+        random_state=42,
+        dual=False  # Faster for n_samples > n_features
     )
+    svm.fit(X_train_split, y_train_split)
 
-    model.fit(X_train_split, y_train_split, X_val, y_val, verbose=True)
+    # Wrap with CalibratedClassifierCV for probability estimates
+    logger.info("Calibrating SVM for probability estimates...")
+    calibrated_svm = CalibratedClassifierCV(svm, cv=3)
+    calibrated_svm.fit(X_train_split, y_train_split)
 
-    # Evaluate
-    logger.info("Evaluating model...")
-    y_pred = model.predict(X_test)
-    y_pred_proba = model.predict_proba(X_test)
+    # Evaluate on validation set
+    val_acc = calibrated_svm.score(X_val, y_val)
+    logger.info(f"Final validation accuracy: {val_acc:.4f}")
+
+    # Evaluate on test set
+    logger.info("Evaluating model on test set...")
+    y_pred = calibrated_svm.predict(X_test)
+    y_pred_proba = calibrated_svm.predict_proba(X_test)
 
     metrics = calculate_metrics(test_labels, y_pred, y_pred_proba)
 
@@ -174,12 +217,17 @@ def main():
     logger.info(f"  Precision: {metrics['precision_macro']:.4f}")
     logger.info(f"  Recall: {metrics['recall_macro']:.4f}")
     logger.info(f"  F1 Score: {metrics['f1_macro']:.4f}")
+    if 'roc_auc_macro' in metrics and metrics['roc_auc_macro'] is not None:
+        logger.info(f"  ROC AUC: {metrics['roc_auc_macro']:.4f}")
 
     # Save results
     with open(experiment_dir / 'metrics.json', 'w') as f:
         json.dump(metrics, f, indent=2)
 
-    model.save(experiment_dir / 'xgboost_model.joblib')
+    with open(experiment_dir / 'hyperparameters.json', 'w') as f:
+        json.dump({'C': final_C}, f, indent=2)
+
+    joblib.dump(calibrated_svm, experiment_dir / 'svm_model.joblib')
 
     # Generate plots
     plots_dir = experiment_dir / 'plots'

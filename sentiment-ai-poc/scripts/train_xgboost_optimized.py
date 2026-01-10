@@ -112,25 +112,29 @@ def main():
     # Save preprocessor
     preprocessor.save(experiment_dir / 'preprocessor.joblib')
 
-    # Improved IGWO parameters
-    logger.info("Extracting and selecting features with improved IGWO...")
+    # Feature extraction and selection using config
+    logger.info("Extracting and selecting features with IGWO from config...")
+    lf_micf_config = feature_config.get('lf_micf', {})
+    igwo_config = feature_config.get('igwo', {})
+    
     selector = FeatureSelector(
         extractor_params={
-            'min_df': 3,  # Lower to capture more features
-            'max_df': 0.9,  # Higher to keep more features
+            'min_df': lf_micf_config.get('min_df', 5),
+            'max_df': lf_micf_config.get('max_df', 0.8),
         },
         selector_params={
-            'n_wolves': 20,  # More wolves for better exploration
-            'n_iterations': 30,  # More iterations for convergence
-            'inertia_weight': 0.9,
-            'target_features': 1000,  # More features selected
-            'cv_folds': 5,  # More folds for better validation
-            'random_state': 42,
+            'n_wolves': igwo_config.get('n_wolves', 10),
+            'n_iterations': igwo_config.get('n_iterations', 20),
+            'inertia_weight': igwo_config.get('inertia_weight', 0.9),
+            'target_features': igwo_config.get('target_features', 800),
+            'cv_folds': igwo_config.get('fitness_cv_folds', 3),
+            'random_state': igwo_config.get('random_state', 42),
         }
     )
 
-    # Use larger sample for IGWO
-    sample_size = 2000  # Increased from 1000
+    # Use sample size from config
+    sample_size = igwo_config.get('sample_size', 1000)
+    logger.info(f"Using sample_size={sample_size} for IGWO feature selection")
     indices = np.random.RandomState(42).choice(len(train_preprocessed), min(sample_size, len(train_preprocessed)), replace=False)
     sample_texts = [train_preprocessed[i] for i in indices]
     sample_labels = train_labels[indices]

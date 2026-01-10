@@ -6,7 +6,7 @@ export interface Review {
   rating: 1 | 2 | 3 | 4 | 5
   sentiment_label: "positive" | "neutral" | "negative"
   sentiment_score: number
-  model_used: "robert" | "xgboost"
+  model_used: "robert" | "xgboost" | "svm"
   review_date: string
   created_at: string
 }

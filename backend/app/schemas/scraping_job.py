@@ -43,7 +43,7 @@ class ScrapingJobCreate(BaseModel):
     @classmethod
     def validate_model_type(cls, v: str) -> str:
         """Validate model type."""
-        allowed_models = ['robert', 'xgboost']
+        allowed_models = ['robert', 'xgboost', 'svm']
         if v.lower() not in allowed_models:
             from fastapi import HTTPException, status
             raise HTTPException(

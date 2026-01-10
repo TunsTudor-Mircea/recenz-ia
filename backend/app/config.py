@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     XGBOOST_MODEL_PATH: str
     XGBOOST_PREPROCESSOR_PATH: str = ""
     XGBOOST_SELECTOR_PATH: str = ""
+    SVM_MODEL_PATH: str = ""
+    SVM_PREPROCESSOR_PATH: str = ""
+    SVM_VECTORIZER_PATH: str = ""
 
     # Celery
     CELERY_BROKER_URL: str = "redis://redis:6379/0"

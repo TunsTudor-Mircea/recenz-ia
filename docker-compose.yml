@@ -46,9 +46,12 @@ services:
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: dev-secret-key-change-in-production
       ROBERT_MODEL_PATH: /models/robert/v1/robert_model
-      XGBOOST_MODEL_PATH: /models/xgboost/v2/xgboost_model.joblib
-      XGBOOST_PREPROCESSOR_PATH: /models/xgboost/v2/preprocessor.joblib
-      XGBOOST_SELECTOR_PATH: /models/xgboost/v2/feature_selector.joblib
+      XGBOOST_MODEL_PATH: /models/xgboost/v3/xgboost_model.joblib
+      XGBOOST_PREPROCESSOR_PATH: /models/xgboost/v3/preprocessor.joblib
+      XGBOOST_SELECTOR_PATH: /models/xgboost/v3/feature_selector.joblib
+      SVM_MODEL_PATH: /models/svm/v1/svm_model.joblib
+      SVM_PREPROCESSOR_PATH: /models/svm/v1/preprocessor.joblib
+      SVM_VECTORIZER_PATH: /models/svm/v1/tfidf_vectorizer.joblib
       PYTHONPATH: /app:/app/app
       DEBUG: "True"
     depends_on:
@@ -73,9 +76,12 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       ROBERT_MODEL_PATH: /models/robert/v1/robert_model
-      XGBOOST_MODEL_PATH: /models/xgboost/v2/xgboost_model.joblib
-      XGBOOST_PREPROCESSOR_PATH: /models/xgboost/v2/preprocessor.joblib
-      XGBOOST_SELECTOR_PATH: /models/xgboost/v2/feature_selector.joblib
+      XGBOOST_MODEL_PATH: /models/xgboost/v3/xgboost_model.joblib
+      XGBOOST_PREPROCESSOR_PATH: /models/xgboost/v3/preprocessor.joblib
+      XGBOOST_SELECTOR_PATH: /models/xgboost/v3/feature_selector.joblib
+      SVM_MODEL_PATH: /models/svm/v1/svm_model.joblib
+      SVM_PREPROCESSOR_PATH: /models/svm/v1/preprocessor.joblib
+      SVM_VECTORIZER_PATH: /models/svm/v1/tfidf_vectorizer.joblib
       PYTHONPATH: /app:/app/app
       DEBUG: "True"
     depends_on:

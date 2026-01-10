@@ -3,6 +3,6 @@ preprocessing:
   lowercase: true
   remove_stopwords: true
   lemmatize: true
-  stem: true
+  stem: false  
   min_token_length: 2
   max_token_length: 50

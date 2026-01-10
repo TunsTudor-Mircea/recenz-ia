@@ -19,7 +19,7 @@ router = APIRouter()
 @router.post("/", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
 def create_review(
     review_data: ReviewCreate,
-    model: str = Query("robert", regex="^(robert|xgboost)$"),
+    model: str = Query("robert", regex="^(robert|xgboost|svm)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -28,7 +28,7 @@ def create_review(
 
     Args:
         review_data: Review data
-        model: ML model to use for sentiment analysis (robert or xgboost)
+        model: ML model to use for sentiment analysis (robert, xgboost, or svm)
         db: Database session
         current_user: Current authenticated user
 
@@ -177,7 +177,7 @@ def get_review(
 def update_review(
     review_id: UUID,
     review_data: ReviewUpdate,
-    model: str = Query("robert", regex="^(robert|xgboost)$"),
+    model: str = Query("robert", regex="^(robert|xgboost|svm)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
