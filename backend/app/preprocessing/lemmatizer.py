@@ -11,8 +11,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# Romanian stopwords
-ROMANIAN_STOPWORDS = {
+# Romanian stopwords optimized for SENTIMENT ANALYSIS
+# Preserves sentiment-critical words (negations, intensifiers, modals)
+ROMANIAN_STOPWORDS_SENTIMENT = {
     'a', 'abia', 'acea', 'aceasta', 'această', 'aceea', 'acei', 'aceia',
     'acel', 'acela', 'acele', 'acelea', 'acest', 'acesta', 'aceste',
     'acestea', 'aceşti', 'aceştia', 'acolo', 'acord', 'acum', 'adica',
@@ -23,7 +24,7 @@ ROMANIAN_STOPWORDS = {
     'astăzi', 'asupra', 'atare', 'atat', 'atata', 'atatea', 'atatia',
     'ati', 'atit', 'atita', 'atitea', 'atitia', 'atunci', 'au', 'avea',
     'avem', 'aveţi', 'avut', 'azi', 'aş', 'aşadar', 'aţi', 'b', 'ba',
-    'bine', 'bucur', 'bună', 'c', 'ca', 'cam', 'cand', 'capat', 'care',
+    'c', 'ca', 'cam', 'cand', 'capat', 'care',
     'careia', 'carora', 'caruia', 'cat', 'catre', 'caut', 'ce', 'cea',
     'ceea', 'cei', 'ceilalti', 'cel', 'cele', 'celor', 'ceva', 'chiar',
     'ci', 'cinci', 'cind', 'cine', 'cineva', 'cit', 'cita', 'cite',
@@ -34,22 +35,21 @@ ROMANIAN_STOPWORDS = {
     'departe', 'desi', 'despre', 'deşi', 'din', 'dinaintea', 'dintr',
     'dintr-', 'dintre', 'doi', 'doilea', 'două', 'drept', 'dupa',
     'după', 'dă', 'e', 'ea', 'ei', 'el', 'ele', 'eram', 'este', 'eu',
-    'exact', 'eşti', 'f', 'face', 'fara', 'fata', 'fel', 'fi', 'fie',
-    'fiecare', 'fii', 'fim', 'fiu', 'fiţi', 'foarte', 'fost', 'frumos',
-    'fără', 'g', 'geaba', 'grație', 'h', 'halbă', 'i', 'ia', 'iar',
+    'exact', 'eşti', 'f', 'face', 'fata', 'fel', 'fi', 'fie',
+    'fiecare', 'fii', 'fim', 'fiu', 'fiţi', 'fost',
+    'g', 'geaba', 'grație', 'h', 'halbă', 'i', 'ia', 'iar',
     'ieri', 'ii', 'il', 'imi', 'in', 'inainte', 'inapoi', 'inca',
     'incit', 'insa', 'intr', 'intre', 'isi', 'iti', 'j', 'k', 'l', 'la',
     'le', 'li', 'linga', 'lor', 'lui', 'lângă', 'lîngă', 'm', 'ma',
-    'mai', 'mare', 'mea', 'mei', 'mele', 'mereu', 'meu', 'mi', 'mie',
-    'mine', 'mod', 'mult', 'multa', 'multe', 'multi', 'multă', 'mulţi',
-    'mulțumesc', 'mâine', 'mîine', 'mă', 'n', 'ne', 'nevoie', 'ni',
-    'nici', 'nicăieri', 'nimeni', 'nimeni', 'nimic', 'niste', 'nişte',
-    'noastre', 'noastră', 'noi', 'noroc', 'nostri', 'nostru', 'nou',
-    'nouă', 'noştri', 'nu', 'număr', 'o', 'opt', 'or', 'ori', 'oricare',
+    'mare', 'mea', 'mei', 'mele', 'mereu', 'meu', 'mi', 'mie',
+    'mine', 'mod', 'mulțumesc', 'mâine', 'mîine', 'mă', 'n', 'ne', 'nevoie', 'ni',
+    'niste', 'nişte',
+    'noastre', 'noastră', 'noi', 'nostri', 'nostru', 'nou',
+    'nouă', 'noştri', 'număr', 'o', 'opt', 'or', 'ori', 'oricare',
     'orice', 'oricine', 'oricum', 'oricând', 'oricât', 'oricînd',
     'oricît', 'oriunde', 'p', 'pai', 'parca', 'patra', 'patru',
-    'patrulea', 'pe', 'pentru', 'peste', 'pic', 'pina', 'plus', 'poate',
-    'pot', 'prea', 'prima', 'primul', 'prin', 'printr-', 'putini',
+    'patrulea', 'pe', 'pentru', 'peste', 'pic', 'pina', 'plus',
+    'prima', 'primul', 'prin', 'printr-', 'putini',
     'puţin', 'puţina', 'puţină', 'până', 'pînă', 'r', 'rog', 's', 'sa',
     'sa-mi', 'sa-ti', 'sai', 'sale', 'san', 'sunt', 'sută', 'sînt',
     'său', 't', 'ta', 'tale', 'tau', 'te', 'ti', 'timp', 'tine', 'toata',
@@ -72,6 +72,7 @@ class RomanianLemmatizer:
     Romanian lemmatizer using Stanza (Stanford NLP) with stopword removal.
 
     Stanza provides state-of-the-art Romanian lemmatization using neural models.
+    Uses sentiment-optimized stopwords that preserve negations and intensifiers.
 
     Attributes:
         remove_stopwords: Whether to remove Romanian stopwords.
@@ -84,10 +85,10 @@ class RomanianLemmatizer:
         Initialize RomanianLemmatizer.
 
         Args:
-            remove_stopwords: If True, remove Romanian stopwords.
+            remove_stopwords: If True, remove Romanian stopwords (sentiment-optimized).
         """
         self.remove_stopwords = remove_stopwords
-        self.stopwords: Set[str] = ROMANIAN_STOPWORDS if remove_stopwords else set()
+        self.stopwords: Set[str] = ROMANIAN_STOPWORDS_SENTIMENT if remove_stopwords else set()
         self._nlp: Optional[any] = None
         self._model_downloaded = False
 
