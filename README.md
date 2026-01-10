@@ -10,7 +10,7 @@ AI-powered sentiment analysis platform for Romanian e-commerce reviews with auto
 ## 🌟 Features
 
 ### Core Functionality
-- 🤖 **Dual ML Models**: RoBERT (Romanian BERT) and XGBoost for sentiment analysis
+- 🤖 **Multiple ML Models**: RoBERT (Romanian BERT), XGBoost, SVM, and Logistic Regression for sentiment analysis
 - 🕷️ **Automated Web Scraping**: Extract reviews from eMAG using Selenium
 - 📊 **Advanced Analytics**: Sentiment trends, rating distributions, and product insights
 - 🔐 **Secure Authentication**: JWT-based user authentication
@@ -42,11 +42,14 @@ cd recenz-ia
 Copy the trained ML models to the `ml-models` directory:
 - RoBERT model files → `ml-models/robert/v1/`
 - XGBoost model files → `ml-models/xgboost/v1/`
+- SVM model files → `ml-models/svm/v1/`
+- Logistic Regression model files → `ml-models/lr/v1/`
 
-Required XGBoost files:
-- `xgboost_model.joblib`
+Required files for classical ML models (XGBoost/SVM/LR):
+- `*_model.joblib`
 - `preprocessor.joblib`
-- `feature_selector.joblib`
+- `tfidf_vectorizer.joblib` (for SVM/LR)
+- `feature_selector.joblib` (for XGBoost only)
 
 ### 3. Start Services
 
@@ -76,7 +79,7 @@ The application consists of several components:
 - **Redis**: Message broker and cache
 - **Celery Worker**: Background task processing
 - **Selenium**: Web scraping with headless Chrome
-- **ML Models**: RoBERT and XGBoost for sentiment analysis
+- **ML Models**: RoBERT, XGBoost, SVM, and Logistic Regression for sentiment analysis
 
 ## 📚 API Endpoints
 
@@ -133,11 +136,35 @@ The application consists of several components:
 - LF-MICF (Local Frequency - Mutual Information Chi-squared Feature) extraction
 - IGWO (Improved Grey Wolf Optimizer) feature selection
 - Binary classification (positive, negative)
-- Fast inference (<1ms per review)
+- ~95% accuracy with 1000 selected features
+- Fast inference (~5ms per review)
 
-**Module Dependencies**:
+### SVM Model
+
+**Architecture**: Support Vector Machine with TF-IDF bigram features
+
+**Features**:
+- Full TF-IDF bigrams (no feature selection)
+- LinearSVC with calibrated probabilities
+- 16,320 features (unigrams + bigrams)
+- 96.4% accuracy on LaRoSeDa dataset
+- Ultra-fast inference (<1ms per review)
+
+### Logistic Regression Model
+
+**Architecture**: Linear classifier with TF-IDF bigram features
+
+**Features**:
+- Full TF-IDF bigrams with L2 regularization
+- Grid search optimized (C=10.0)
+- 16,320 features (unigrams + bigrams)
+- 96.43% accuracy - best classical ML model
+- Fastest training (<1 minute) and smallest size (~1MB)
+- Ultra-fast inference (<1ms per review)
+
+**Module Dependencies (XGBoost/SVM/LR)**:
 - Custom `preprocessing` module for text cleaning, tokenization, lemmatization
-- Custom `features` module for LF-MICF and IGWO feature selection
+- Custom `features` module for LF-MICF and IGWO (XGBoost only)
 - Uses PYTHONPATH configuration to resolve module imports
 
 ## 🔒 Security
@@ -189,7 +216,9 @@ recenz-ia/
 ├── frontend/                # Next.js frontend application
 ├── ml-models/
 │   ├── robert/              # RoBERT model files
-│   └── xgboost/             # XGBoost model files
+│   ├── xgboost/             # XGBoost model files
+│   ├── svm/                 # SVM model files
+│   └── lr/                  # Logistic Regression model files
 └── docker-compose.yml       # Docker orchestration
 ```
 
