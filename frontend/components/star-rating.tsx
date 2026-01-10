@@ -16,7 +16,7 @@ export function StarRating({ rating, maxRating = 5, size = 16, showNumber = true
           size={size}
           className={
             i < Math.floor(rating)
-              ? "fill-[var(--sentiment-neutral)] text-[var(--sentiment-neutral)]"
+              ? "fill-[var(--sentiment-positive)] text-[var(--sentiment-positive)]"
               : "text-muted-foreground/30"
           }
         />

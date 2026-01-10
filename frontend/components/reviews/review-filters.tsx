@@ -24,7 +24,7 @@ export function ReviewFilters({ sentiment, setSentiment, rating, setRating, sort
           <SelectContent>
             <SelectItem value="all">All sentiments</SelectItem>
             <SelectItem value="positive">Positive</SelectItem>
-            <SelectItem value="neutral">Neutral</SelectItem>
+
             <SelectItem value="negative">Negative</SelectItem>
           </SelectContent>
         </Select>

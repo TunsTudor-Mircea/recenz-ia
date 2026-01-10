@@ -4,7 +4,7 @@ export interface Review {
   review_title?: string | null
   review_text: string
   rating: 1 | 2 | 3 | 4 | 5
-  sentiment_label: "positive" | "neutral" | "negative"
+  sentiment_label: "positive" | "negative"
   sentiment_score: number
   model_used: "robert" | "xgboost" | "svm"
   review_date: string
@@ -13,7 +13,6 @@ export interface Review {
 
 export interface SentimentDistribution {
   positive: number
-  neutral: number
   negative: number
   total: number
 }

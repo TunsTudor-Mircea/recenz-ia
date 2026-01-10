@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 
 interface SentimentBadgeProps {
-  sentiment: "positive" | "neutral" | "negative"
+  sentiment: "positive" | "negative"
   score?: number
   className?: string
 }

@@ -91,14 +91,10 @@ export function ProductCard({
             <StarRating rating={averageRating} size={18} />
           </div>
 
-          <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="grid grid-cols-2 gap-2 text-center">
             <div className="p-2 rounded-lg bg-[var(--sentiment-positive-bg)]">
               <div className="text-lg font-bold text-[var(--sentiment-positive)]">{sentimentDistribution.positive}</div>
               <div className="text-xs text-muted-foreground">Positive</div>
-            </div>
-            <div className="p-2 rounded-lg bg-[var(--sentiment-neutral-bg)]">
-              <div className="text-lg font-bold text-[var(--sentiment-neutral)]">{sentimentDistribution.neutral}</div>
-              <div className="text-xs text-muted-foreground">Neutral</div>
             </div>
             <div className="p-2 rounded-lg bg-[var(--sentiment-negative-bg)]">
               <div className="text-lg font-bold text-[var(--sentiment-negative)]">{sentimentDistribution.negative}</div>

@@ -11,14 +11,12 @@ interface SentimentDistributionChartProps {
 // Professional colors matching app theme with teal accent
 const COLORS = {
   positive: "#14b8a6", // Teal-500 - vibrant teal for positive sentiment
-  neutral: "#f59e0b", // Amber-500 - warm amber for neutral sentiment
   negative: "#475569", // Slate-600 - cooler gray-blue for negative sentiment
 }
 
 export function SentimentDistributionChart({ data }: SentimentDistributionChartProps) {
   const chartData = [
     { name: "Positive", value: data.positive, color: COLORS.positive },
-    { name: "Neutral", value: data.neutral, color: COLORS.neutral },
     { name: "Negative", value: data.negative, color: COLORS.negative },
   ]
 
@@ -48,18 +46,12 @@ export function SentimentDistributionChart({ data }: SentimentDistributionChartP
             />
           </PieChart>
         </ResponsiveContainer>
-        <div className="mt-4 grid grid-cols-3 gap-4 text-center">
+        <div className="mt-4 grid grid-cols-2 gap-4 text-center">
           <div>
             <div className="text-2xl font-bold" style={{ color: COLORS.positive }}>
               {data.positive}
             </div>
             <div className="text-xs text-muted-foreground">Positive</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold" style={{ color: COLORS.neutral }}>
-              {data.neutral}
-            </div>
-            <div className="text-xs text-muted-foreground">Neutral</div>
           </div>
           <div>
             <div className="text-2xl font-bold" style={{ color: COLORS.negative }}>
