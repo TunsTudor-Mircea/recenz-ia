@@ -97,5 +97,18 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Next.js Frontend
+  frontend:
+    build: ./frontend
+    container_name: recenzia-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:8000
+      NODE_ENV: production
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   postgres_data:
