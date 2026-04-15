@@ -1,0 +1,52 @@
+{
+  "random_seed": 42,
+  "silver_reviews": 13863,
+  "train_reviews": 12476,
+  "val_reviews": 1387,
+  "gold_reviews": 400,
+  "aspects": [
+    "BATERIE",
+    "ECRAN",
+    "SUNET",
+    "PERFORMANTA",
+    "CONECTIVITATE",
+    "DESIGN",
+    "CALITATE_CONSTRUCTIE",
+    "PRET",
+    "LIVRARE",
+    "GENERAL"
+  ],
+  "label2id": {
+    "none": 0,
+    "positive": 1,
+    "negative": 2,
+    "neutral": 3
+  },
+  "train": {
+    "pairs": 124760,
+    "label_dist": {
+      "none": 106287,
+      "positive": 9203,
+      "negative": 8981,
+      "neutral": 289
+    }
+  },
+  "val": {
+    "pairs": 13870,
+    "label_dist": {
+      "none": 11778,
+      "negative": 1039,
+      "positive": 1017,
+      "neutral": 36
+    }
+  },
+  "gold_test": {
+    "pairs": 4000,
+    "label_dist": {
+      "none": 3133,
+      "negative": 454,
+      "positive": 383,
+      "neutral": 30
+    }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "model_name": "LR-baseline",
+  "model_type": "baseline_lr",
+  "model_path": null,
+  "metrics": {
+    "BATERIE": {
+      "n_human": 120,
+      "n_pred": 105,
+      "detection_p": 0.9619,
+      "detection_r": 0.8417,
+      "detection_f1": 0.8978,
+      "polarity_macro_f1": 0.5385,
+      "polarity_macro_p": 0.5827,
+      "polarity_macro_r": 0.5029,
+      "combined_macro_f1": 0.6358
+    },
+    "ECRAN": {
+      "n_human": 18,
+      "n_pred": 12,
+      "detection_p": 0.6667,
+      "detection_r": 0.4444,
+      "detection_f1": 0.5333,
+      "polarity_macro_f1": 0.401,
+      "polarity_macro_p": 0.6667,
+      "polarity_macro_r": 0.2872,
+      "combined_macro_f1": 0.5187
+    },
+    "SUNET": {
+      "n_human": 69,
+      "n_pred": 69,
+      "detection_p": 0.8696,
+      "detection_r": 0.8696,
+      "detection_f1": 0.8696,
+      "polarity_macro_f1": 0.5828,
+      "polarity_macro_p": 0.6228,
+      "polarity_macro_r": 0.5514,
+      "combined_macro_f1": 0.6477
+    },
+    "PERFORMANTA": {
+      "n_human": 63,
+      "n_pred": 38,
+      "detection_p": 0.7368,
+      "detection_r": 0.4444,
+      "detection_f1": 0.5545,
+      "polarity_macro_f1": 0.3706,
+      "polarity_macro_p": 0.5417,
+      "polarity_macro_r": 0.2903,
+      "combined_macro_f1": 0.4772
+    },
+    "CONECTIVITATE": {
+      "n_human": 42,
+      "n_pred": 47,
+      "detection_p": 0.6596,
+      "detection_r": 0.7381,
+      "detection_f1": 0.6966,
+      "polarity_macro_f1": 0.5178,
+      "polarity_macro_p": 0.6175,
+      "polarity_macro_r": 0.4469,
+      "combined_macro_f1": 0.5581
+    },
+    "DESIGN": {
+      "n_human": 80,
+      "n_pred": 70,
+      "detection_p": 0.7,
+      "detection_r": 0.6125,
+      "detection_f1": 0.6533,
+      "polarity_macro_f1": 0.4369,
+      "polarity_macro_p": 0.5836,
+      "polarity_macro_r": 0.361,
+      "combined_macro_f1": 0.5112
+    },
+    "CALITATE_CONSTRUCTIE": {
+      "n_human": 81,
+      "n_pred": 21,
+      "detection_p": 0.6667,
+      "detection_r": 0.1728,
+      "detection_f1": 0.2745,
+      "polarity_macro_f1": 0.1807,
+      "polarity_macro_p": 0.6667,
+      "polarity_macro_r": 0.1052,
+      "combined_macro_f1": 0.3449
+    },
+    "PRET": {
+      "n_human": 84,
+      "n_pred": 143,
+      "detection_p": 0.5175,
+      "detection_r": 0.881,
+      "detection_f1": 0.652,
+      "polarity_macro_f1": 0.555,
+      "polarity_macro_p": 0.5804,
+      "polarity_macro_r": 0.5321,
+      "combined_macro_f1": 0.511
+    },
+    "LIVRARE": {
+      "n_human": 26,
+      "n_pred": 5,
+      "detection_p": 1.0,
+      "detection_r": 0.1923,
+      "detection_f1": 0.3226,
+      "polarity_macro_f1": 0.2213,
+      "polarity_macro_p": 0.6667,
+      "polarity_macro_r": 0.1354,
+      "combined_macro_f1": 0.4091
+    },
+    "GENERAL": {
+      "n_human": 284,
+      "n_pred": 274,
+      "detection_p": 0.7956,
+      "detection_r": 0.7676,
+      "detection_f1": 0.7814,
+      "polarity_macro_f1": 0.651,
+      "polarity_macro_p": 0.8245,
+      "polarity_macro_r": 0.5621,
+      "combined_macro_f1": 0.5695
+    },
+    "macro": {
+      "detection_f1": 0.6236,
+      "polarity_macro_f1": 0.4456,
+      "combined_macro_f1": 0.5183
+    }
+  }
+}

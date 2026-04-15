@@ -1,0 +1,15 @@
+{
+  "n_gold_reviews": 400,
+  "human_vs_llm": {
+    "exact_match_rate": 0.98,
+    "aggregate_detection_kappa": 0.9963,
+    "macro_detection_kappa": 0.9918,
+    "macro_polarity_kappa": 0.9942
+  },
+  "human_vs_nli": {
+    "exact_match_rate": 0.035,
+    "aggregate_detection_kappa": 0.1012,
+    "macro_detection_kappa": 0.1404,
+    "macro_polarity_kappa": 0.7664
+  }
+}

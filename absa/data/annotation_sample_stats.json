@@ -1,0 +1,27 @@
+{
+  "random_seed": 42,
+  "total_reviews": 2808,
+  "by_domain": {
+    "telefon": {
+      "total": 1000,
+      "negative": 500,
+      "positive": 500,
+      "mean_content_length": 260.8,
+      "median_content_length": 192.0
+    },
+    "ceas_smart": {
+      "total": 808,
+      "negative": 404,
+      "positive": 404,
+      "mean_content_length": 472.3,
+      "median_content_length": 322.5
+    },
+    "audio_video": {
+      "total": 1000,
+      "negative": 500,
+      "positive": 500,
+      "mean_content_length": 285.7,
+      "median_content_length": 189.0
+    }
+  }
+}

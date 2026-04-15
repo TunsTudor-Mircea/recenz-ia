@@ -1,0 +1,122 @@
+{
+  "model_name": "bert-base-romanian-cased-v1",
+  "model_type": "transformer",
+  "model_path": "absa\\models\\checkpoints\\bert-base-romanian-cased-v1\\best_model",
+  "metrics": {
+    "BATERIE": {
+      "n_human": 120,
+      "n_pred": 105,
+      "detection_p": 1.0,
+      "detection_r": 0.875,
+      "detection_f1": 0.9333,
+      "polarity_macro_f1": 0.6084,
+      "polarity_macro_p": 0.6444,
+      "polarity_macro_r": 0.5783,
+      "combined_macro_f1": 0.6998
+    },
+    "ECRAN": {
+      "n_human": 18,
+      "n_pred": 11,
+      "detection_p": 1.0,
+      "detection_r": 0.6111,
+      "detection_f1": 0.7586,
+      "polarity_macro_f1": 0.4632,
+      "polarity_macro_p": 0.6667,
+      "polarity_macro_r": 0.3641,
+      "combined_macro_f1": 0.5951
+    },
+    "SUNET": {
+      "n_human": 69,
+      "n_pred": 66,
+      "detection_p": 0.9545,
+      "detection_r": 0.913,
+      "detection_f1": 0.9333,
+      "polarity_macro_f1": 0.6021,
+      "polarity_macro_p": 0.6239,
+      "polarity_macro_r": 0.584,
+      "combined_macro_f1": 0.6868
+    },
+    "PERFORMANTA": {
+      "n_human": 63,
+      "n_pred": 27,
+      "detection_p": 0.8889,
+      "detection_r": 0.381,
+      "detection_f1": 0.5333,
+      "polarity_macro_f1": 0.3453,
+      "polarity_macro_p": 0.5556,
+      "polarity_macro_r": 0.2659,
+      "combined_macro_f1": 0.4796
+    },
+    "CONECTIVITATE": {
+      "n_human": 42,
+      "n_pred": 38,
+      "detection_p": 0.8684,
+      "detection_r": 0.7857,
+      "detection_f1": 0.825,
+      "polarity_macro_f1": 0.5814,
+      "polarity_macro_p": 0.6667,
+      "polarity_macro_r": 0.516,
+      "combined_macro_f1": 0.6564
+    },
+    "DESIGN": {
+      "n_human": 80,
+      "n_pred": 54,
+      "detection_p": 0.8889,
+      "detection_r": 0.6,
+      "detection_f1": 0.7164,
+      "polarity_macro_f1": 0.4649,
+      "polarity_macro_p": 0.6476,
+      "polarity_macro_r": 0.3978,
+      "combined_macro_f1": 0.5682
+    },
+    "CALITATE_CONSTRUCTIE": {
+      "n_human": 81,
+      "n_pred": 7,
+      "detection_p": 0.5714,
+      "detection_r": 0.0494,
+      "detection_f1": 0.0909,
+      "polarity_macro_f1": 0.1333,
+      "polarity_macro_p": 0.3333,
+      "polarity_macro_r": 0.0833,
+      "combined_macro_f1": 0.3089
+    },
+    "PRET": {
+      "n_human": 84,
+      "n_pred": 131,
+      "detection_p": 0.6031,
+      "detection_r": 0.9405,
+      "detection_f1": 0.7349,
+      "polarity_macro_f1": 0.5846,
+      "polarity_macro_p": 0.5926,
+      "polarity_macro_r": 0.578,
+      "combined_macro_f1": 0.5699
+    },
+    "LIVRARE": {
+      "n_human": 26,
+      "n_pred": 3,
+      "detection_p": 1.0,
+      "detection_r": 0.1154,
+      "detection_f1": 0.2069,
+      "polarity_macro_f1": 0.1442,
+      "polarity_macro_p": 0.6667,
+      "polarity_macro_r": 0.0828,
+      "combined_macro_f1": 0.3507
+    },
+    "GENERAL": {
+      "n_human": 284,
+      "n_pred": 241,
+      "detection_p": 0.8382,
+      "detection_r": 0.7113,
+      "detection_f1": 0.7695,
+      "polarity_macro_f1": 0.6081,
+      "polarity_macro_p": 0.8503,
+      "polarity_macro_r": 0.5102,
+      "combined_macro_f1": 0.561
+    },
+    "macro": {
+      "detection_f1": 0.6502,
+      "polarity_macro_f1": 0.4536,
+      "combined_macro_f1": 0.5476
+    }
+  }
+}
