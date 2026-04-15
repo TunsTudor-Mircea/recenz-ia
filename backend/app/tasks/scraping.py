@@ -117,7 +117,8 @@ def scrape_product_reviews(self, job_id: str, url: str, site_type: Optional[str]
                     content_hash=content_hash,
                     sentiment_label=sentiment_result['sentiment_label'],
                     sentiment_score=sentiment_result['sentiment_score'],
-                    model_used=sentiment_result['model_used']
+                    model_used=sentiment_result['model_used'],
+                    aspects=sentiment_result.get('aspects'),  # None for binary models
                 )
 
                 db.add(review)

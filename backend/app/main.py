@@ -1,6 +1,7 @@
 """
 FastAPI application entry point.
 """
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -14,8 +15,14 @@ from app.core.middleware import (
 )
 from app.api.v1 import api_router
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create database tables on startup (alembic handles migrations,
+    # but this ensures tables exist for any models not yet in migrations)
+    Base.metadata.create_all(bind=engine)
+    yield
+
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -23,6 +30,7 @@ app = FastAPI(
     description="AI-powered sentiment analysis for Romanian e-commerce reviews",
     version="1.0.0",
     debug=settings.DEBUG,
+    lifespan=lifespan,
 )
 
 # Add middleware (order matters - they execute in reverse order)

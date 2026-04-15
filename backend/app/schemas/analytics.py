@@ -2,7 +2,7 @@
 Analytics schemas for review aggregation and insights.
 """
 from datetime import datetime
-from typing import Optional, List
+from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -102,3 +102,32 @@ class PaginatedProducts(BaseModel):
     total: int = Field(..., description="Total number of products")
     skip: int = Field(..., description="Number of products skipped")
     limit: int = Field(..., description="Number of products per page")
+
+
+class AspectPolarityDistribution(BaseModel):
+    """Polarity breakdown for a single aspect category."""
+
+    aspect: str
+    positive: int
+    negative: int
+    neutral: int
+    # Reviews where this aspect was not mentioned (label == "none").
+    not_mentioned: int
+    total_reviews: int  # reviews that had ABSA annotations
+
+
+class AspectAnalytics(BaseModel):
+    """
+    Aspect-level sentiment analytics across all ABSA-annotated reviews.
+
+    Only reviews where model_used starts with 'absa_' contribute to these counts.
+    """
+
+    total_absa_reviews: int = Field(..., description="Number of reviews with ABSA annotations")
+    aspects: List[AspectPolarityDistribution] = Field(
+        ..., description="Per-aspect polarity distribution, sorted by total mentions descending"
+    )
+    # Maps aspect name → fraction of reviews where it was mentioned (label != none)
+    mention_rate: Dict[str, float] = Field(
+        ..., description="Fraction of ABSA reviews mentioning each aspect"
+    )

@@ -16,10 +16,13 @@ from app.services.sentiment import sentiment_analyzer
 router = APIRouter()
 
 
+_MODEL_REGEX = "^(robert|xgboost|svm|lr|absa_xlmr|absa_robert|absa_mbert|absa_lr|absa_svm)$"
+
+
 @router.post("/", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
 def create_review(
     review_data: ReviewCreate,
-    model: str = Query("robert", regex="^(robert|xgboost|svm|lr)$"),
+    model: str = Query("robert", regex=_MODEL_REGEX),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -51,11 +54,14 @@ def create_review(
     review = Review(
         user_id=current_user.id,
         product_name=review_data.product_name,
+        review_title=review_data.review_title,
         review_text=review_data.review_text,
         rating=review_data.rating,
+        review_date=review_data.review_date,
         sentiment_label=sentiment_result["sentiment_label"],
         sentiment_score=sentiment_result["sentiment_score"],
-        model_used=sentiment_result["model_used"]
+        model_used=sentiment_result["model_used"],
+        aspects=sentiment_result.get("aspects"),  # None for binary models
     )
 
     db.add(review)
@@ -177,7 +183,7 @@ def get_review(
 def update_review(
     review_id: UUID,
     review_data: ReviewUpdate,
-    model: str = Query("robert", regex="^(robert|xgboost|svm|lr)$"),
+    model: str = Query("robert", regex=_MODEL_REGEX),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -220,6 +226,7 @@ def update_review(
             review.sentiment_label = sentiment_result["sentiment_label"]
             review.sentiment_score = sentiment_result["sentiment_score"]
             review.model_used = sentiment_result["model_used"]
+            review.aspects = sentiment_result.get("aspects")
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

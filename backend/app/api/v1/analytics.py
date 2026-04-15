@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.api.v1.auth import get_current_user
 from app.models.user import User
 from app.schemas.analytics import (
+    AspectAnalytics,
     ProductAnalytics,
     AnalyticsSummary,
     ProductTrend,
@@ -105,3 +106,19 @@ def get_top_reviews(
         List of top reviews sorted by sentiment score and rating
     """
     return analytics_service.get_top_reviews(db, limit, sentiment, min_rating)
+
+
+@router.get("/aspects", response_model=AspectAnalytics)
+def get_aspect_analytics(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Aggregate aspect-level sentiment across all ABSA-annotated reviews.
+
+    Only reviews analysed with an absa_* model contribute to these counts.
+    Returns per-aspect polarity distribution (positive / negative / neutral /
+    not_mentioned) and a mention_rate dict showing what fraction of reviews
+    reference each aspect category.
+    """
+    return analytics_service.get_aspect_analytics(db, user_id=str(current_user.id))

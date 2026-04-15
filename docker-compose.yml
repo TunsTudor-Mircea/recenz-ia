@@ -17,6 +17,8 @@ services:
       timeout: 3s
       retries: 10
       start_period: 5s
+    networks:
+      - recenzia-net
 
   # Redis
   redis:
@@ -30,17 +32,27 @@ services:
       timeout: 3s
       retries: 10
       start_period: 5s
+    networks:
+      - recenzia-net
 
   # FastAPI Backend
   backend:
     build: ./backend
     container_name: recenzia-backend
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: >
+      sh -c "
+        until pg_isready -h postgres -p 5432 -U recenzia; do
+          echo 'Waiting for postgres...'; sleep 1;
+        done &&
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
       - ./ml-models:/models
+      - ./absa/models:/absa_models
     environment:
       DATABASE_URL: postgresql://recenzia:recenzia_pass@postgres:5432/recenzia
       REDIS_URL: redis://redis:6379/0
@@ -55,6 +67,9 @@ services:
       LR_MODEL_PATH: /models/lr/v1/logistic_regression_model.joblib
       LR_PREPROCESSOR_PATH: /models/lr/v1/preprocessor.joblib
       LR_VECTORIZER_PATH: /models/lr/v1/tfidf_vectorizer.joblib
+      ABSA_CHECKPOINT_DIR: /absa_models/checkpoints
+      ABSA_BASELINES_DIR: /absa_models/baselines
+      ABSA_DEFAULT_TRANSFORMER: xlmr
       PYTHONPATH: /app:/app/app
       DEBUG: "True"
     depends_on:
@@ -63,15 +78,24 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - recenzia-net
 
   # Celery Worker (for background tasks)
   celery:
     build: ./backend
     container_name: recenzia-celery
-    command: celery -A app.tasks.celery_app worker --loglevel=info
+    command: >
+      sh -c "
+        until pg_isready -h postgres -p 5432 -U recenzia; do
+          echo 'Waiting for postgres...'; sleep 1;
+        done &&
+        celery -A app.tasks.celery_app worker --loglevel=info
+      "
     volumes:
       - ./backend:/app
       - ./ml-models:/models
+      - ./absa/models:/absa_models
     environment:
       DATABASE_URL: postgresql://recenzia:recenzia_pass@postgres:5432/recenzia
       REDIS_URL: redis://redis:6379/0
@@ -88,6 +112,9 @@ services:
       LR_MODEL_PATH: /models/lr/v1/logistic_regression_model.joblib
       LR_PREPROCESSOR_PATH: /models/lr/v1/preprocessor.joblib
       LR_VECTORIZER_PATH: /models/lr/v1/tfidf_vectorizer.joblib
+      ABSA_CHECKPOINT_DIR: /absa_models/checkpoints
+      ABSA_BASELINES_DIR: /absa_models/baselines
+      ABSA_DEFAULT_TRANSFORMER: xlmr
       PYTHONPATH: /app:/app/app
       DEBUG: "True"
     depends_on:
@@ -96,6 +123,8 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - recenzia-net
 
   # Next.js Frontend
   frontend:
@@ -109,6 +138,12 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+    networks:
+      - recenzia-net
 
 volumes:
   postgres_data:
+
+networks:
+  recenzia-net:
+    driver: bridge

@@ -2,7 +2,7 @@
 Review schemas for request/response validation.
 """
 from datetime import datetime
-from typing import Optional
+from typing import Dict, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 
@@ -90,6 +90,10 @@ class ReviewResponse(ReviewBase):
     sentiment_label: Optional[str] = None
     sentiment_score: Optional[float] = None
     model_used: Optional[str] = None
+    # Per-aspect results, populated only when an absa_* model was used.
+    # Keys are the 10 aspect category names; values are polarity strings:
+    # "positive", "negative", "neutral", or "none" (aspect not mentioned).
+    aspects: Optional[Dict[str, str]] = None
     created_at: datetime
     updated_at: datetime
 

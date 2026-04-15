@@ -270,18 +270,26 @@ class SentimentAnalyzer:
     def analyze(
         self,
         text: str,
-        model: Literal["robert", "xgboost", "svm", "lr"] = "robert"
+        model: str = "robert",
     ) -> Dict[str, any]:
         """
-        Analyze sentiment using specified model.
+        Analyze sentiment using the specified model.
 
-        Args:
-            text: Review text to analyze
-            model: Model to use ("robert", "xgboost", "svm", or "lr")
+        Binary sentiment models (legacy):
+            robert, xgboost, svm, lr
 
-        Returns:
-            Dictionary with sentiment label and confidence score
+        ABSA models (aspect-level):
+            absa_xlmr, absa_robert, absa_mbert, absa_lr, absa_svm
+
+        Returns a dict with at minimum:
+            sentiment_label, sentiment_score, model_used
+        ABSA models additionally include:
+            aspects: {ASPECT_NAME: polarity, ...}
         """
+        if model in ("absa_xlmr", "absa_robert", "absa_mbert", "absa_lr", "absa_svm"):
+            from app.services.absa import absa_analyzer
+            return absa_analyzer.analyze(text, model)
+
         if model == "robert":
             return self.analyze_with_robert(text)
         elif model == "xgboost":
@@ -291,7 +299,11 @@ class SentimentAnalyzer:
         elif model == "lr":
             return self.analyze_with_lr(text)
         else:
-            raise ValueError(f"Unknown model: {model}")
+            raise ValueError(
+                f"Unknown model '{model}'. Valid options: "
+                "robert, xgboost, svm, lr, "
+                "absa_xlmr, absa_robert, absa_mbert, absa_lr, absa_svm"
+            )
 
 
 # Global instance

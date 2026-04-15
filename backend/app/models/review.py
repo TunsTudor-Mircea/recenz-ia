@@ -3,7 +3,7 @@ Review model for storing product reviews.
 """
 from datetime import datetime
 from sqlalchemy import Column, String, Text, Float, Integer, DateTime, ForeignKey, Index
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
 import hashlib
@@ -32,7 +32,12 @@ class Review(Base):
     # Sentiment analysis results
     sentiment_label = Column(String(50))  # positive, negative, neutral
     sentiment_score = Column(Float)  # confidence score
-    model_used = Column(String(50))  # robert or xgboost
+    model_used = Column(String(50))  # robert, xgboost, svm, lr, absa_xlmr, absa_robert, absa_mbert, absa_lr, absa_svm
+
+    # ABSA results — populated only when model_used is an absa_* variant.
+    # Schema: {"BATERIE": "positive", "ECRAN": "none", "PRET": "negative", ...}
+    # All ten aspect keys are always present; "none" means the aspect was not mentioned.
+    aspects = Column(JSONB, nullable=True)
 
     # Metadata
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)

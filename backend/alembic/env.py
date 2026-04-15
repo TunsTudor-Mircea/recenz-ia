@@ -14,6 +14,12 @@ from app.config import settings
 # access to the values within the .ini file in use.
 config = context.config
 
+# Override the alembic.ini sqlalchemy.url with the value from the runtime
+# environment (DATABASE_URL env var via app.config.Settings).
+# This ensures migrations always target the correct database regardless of
+# what is hardcoded in alembic.ini.
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:

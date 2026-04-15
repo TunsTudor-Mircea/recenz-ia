@@ -301,5 +301,84 @@ class AnalyticsService:
         ]
 
 
+    @staticmethod
+    def get_aspect_analytics(db: Session, user_id: Optional[str] = None) -> "AspectAnalytics":
+        """
+        Aggregate per-aspect polarity distribution across all ABSA-annotated reviews.
+
+        Only reviews whose model_used starts with 'absa_' and have a non-null aspects
+        JSONB column contribute to the counts.
+        """
+        from app.schemas.analytics import AspectAnalytics, AspectPolarityDistribution
+
+        ASPECT_LABELS = [
+            "BATERIE", "ECRAN", "SUNET", "PERFORMANTA", "CONECTIVITATE",
+            "DESIGN", "CALITATE_CONSTRUCTIE", "PRET", "LIVRARE", "GENERAL",
+        ]
+
+        query = db.query(Review).filter(
+            Review.aspects.isnot(None),
+            Review.model_used.like("absa_%"),
+        )
+        if user_id:
+            query = query.filter(Review.user_id == user_id)
+
+        absa_reviews = query.all()
+        total = len(absa_reviews)
+
+        if total == 0:
+            return AspectAnalytics(
+                total_absa_reviews=0,
+                aspects=[
+                    AspectPolarityDistribution(
+                        aspect=asp, positive=0, negative=0, neutral=0,
+                        not_mentioned=0, total_reviews=0,
+                    )
+                    for asp in ASPECT_LABELS
+                ],
+                mention_rate={asp: 0.0 for asp in ASPECT_LABELS},
+            )
+
+        # Tally counts per aspect
+        counts: dict = {
+            asp: {"positive": 0, "negative": 0, "neutral": 0, "none": 0}
+            for asp in ASPECT_LABELS
+        }
+        for review in absa_reviews:
+            aspects_data: dict = review.aspects or {}
+            for asp in ASPECT_LABELS:
+                polarity = aspects_data.get(asp, "none")
+                key = polarity if polarity in ("positive", "negative", "neutral") else "none"
+                counts[asp][key] += 1
+
+        aspect_list = []
+        mention_rate = {}
+        for asp in ASPECT_LABELS:
+            c = counts[asp]
+            mentioned = c["positive"] + c["negative"] + c["neutral"]
+            aspect_list.append(
+                AspectPolarityDistribution(
+                    aspect=asp,
+                    positive=c["positive"],
+                    negative=c["negative"],
+                    neutral=c["neutral"],
+                    not_mentioned=c["none"],
+                    total_reviews=total,
+                )
+            )
+            mention_rate[asp] = round(mentioned / total, 4) if total > 0 else 0.0
+
+        # Sort by total mentions descending
+        aspect_list.sort(
+            key=lambda a: (a.positive + a.negative + a.neutral), reverse=True
+        )
+
+        return AspectAnalytics(
+            total_absa_reviews=total,
+            aspects=aspect_list,
+            mention_rate=mention_rate,
+        )
+
+
 # Create singleton instance
 analytics_service = AnalyticsService()
