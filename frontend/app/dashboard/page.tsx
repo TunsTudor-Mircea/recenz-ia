@@ -6,17 +6,26 @@ import { Navbar } from "@/components/layout/navbar"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { SentimentDistributionChart } from "@/components/dashboard/sentiment-distribution-chart"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Package, MessageSquare, Star, TrendingUp, ArrowRight } from "lucide-react"
-import { isAuthenticated } from "@/lib/auth"
+import { isAuthenticated, getCurrentUser } from "@/lib/auth"
 import api from "@/lib/api"
-import type { AnalyticsSummary } from "@/types/api"
+import type { AnalyticsSummary, AspectAnalytics } from "@/types/api"
+import { ASPECT_LABELS } from "@/components/charts/aspect-sentiment-chart"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 
+function healthLabel(rate: number): { label: string; className: string } {
+  if (rate >= 80) return { label: "Excellent", className: "bg-green-100 text-green-700" }
+  if (rate >= 60) return { label: "Good", className: "bg-teal-100 text-teal-700" }
+  if (rate >= 40) return { label: "Fair", className: "bg-yellow-100 text-yellow-700" }
+  return { label: "Poor", className: "bg-red-100 text-red-700" }
+}
+
 export default function DashboardPage() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
+  const [aspectAnalytics, setAspectAnalytics] = useState<AspectAnalytics | null>(null)
+  const [userName, setUserName] = useState<string>("")
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const { toast } = useToast()
@@ -29,8 +38,20 @@ export default function DashboardPage() {
 
     const fetchSummary = async () => {
       try {
-        const response = await api.get<AnalyticsSummary>("/api/v1/analytics/summary")
-        setSummary(response.data)
+        const [summaryResponse, userResponse] = await Promise.all([
+          api.get<AnalyticsSummary>("/api/v1/analytics/summary"),
+          getCurrentUser(),
+        ])
+        setSummary(summaryResponse.data)
+        setUserName(userResponse.full_name || userResponse.email)
+
+        // Best-effort: fetch aspect analytics (only available if ABSA reviews exist)
+        try {
+          const aspectResponse = await api.get<AspectAnalytics>("/api/v1/analytics/aspects")
+          setAspectAnalytics(aspectResponse.data)
+        } catch {
+          // no ABSA data yet — silently ignore
+        }
       } catch (error) {
         console.error("[v0] Failed to fetch summary:", error)
         toast({
@@ -65,6 +86,14 @@ export default function DashboardPage() {
     )
   }
 
+  const positive = summary?.sentiment_distribution.positive ?? 0
+  const negative = summary?.sentiment_distribution.negative ?? 0
+  const total = summary?.sentiment_distribution.total ?? 0
+  const positiveRate = total > 0 ? Math.round((positive / total) * 100) : 0
+  const negativeRate = total > 0 ? Math.round((negative / total) * 100) : 0
+  const avgRating = summary?.average_rating ?? 0
+  const health = healthLabel(positiveRate)
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -75,12 +104,11 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
             <p className="text-muted-foreground mt-1">Overview of your sentiment analysis data</p>
           </div>
-          <Link href="/products">
-            <Button>
-              <Package className="h-4 w-4 mr-2" />
-              View Products
-            </Button>
-          </Link>
+          {userName && (
+            <p className="text-lg font-medium text-muted-foreground">
+              Hello, <span className="text-foreground font-semibold">{userName.split(" ")[0]}</span>
+            </p>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -105,17 +133,105 @@ export default function DashboardPage() {
           />
           <StatCard
             title="Positive Sentiment"
-            value={`${summary ? Math.round((summary.sentiment_distribution.positive / summary.sentiment_distribution.total) * 100) : 0}%`}
+            value={`${positiveRate}%`}
             icon={TrendingUp}
             description="Overall sentiment score"
           />
         </div>
 
-        {/* Charts and Lists */}
+        {/* Row 1: Sentiment chart + Sentiment Overview */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Sentiment Chart */}
           {summary && <SentimentDistributionChart data={summary.sentiment_distribution} />}
 
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle>Sentiment Overview</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col flex-1 gap-5">
+              {/* Big positive rate */}
+              <div className="flex items-end gap-3">
+                <span className="text-6xl font-bold" style={{ color: "#14b8a6" }}>
+                  {positiveRate}%
+                </span>
+                <div className="pb-2 space-y-0.5">
+                  <p className="text-sm font-semibold text-foreground">positive</p>
+                  <p className="text-xs text-muted-foreground">out of {total} reviews</p>
+                </div>
+              </div>
+
+              {/* Stacked bar */}
+              <div className="space-y-1.5">
+                <div className="flex h-2.5 w-full rounded-full overflow-hidden bg-muted">
+                  <div
+                    style={{ width: `${positiveRate}%`, backgroundColor: "#14b8a6", transition: "width 0.5s ease" }}
+                  />
+                  <div
+                    style={{ width: `${negativeRate}%`, backgroundColor: "#475569" }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span style={{ color: "#14b8a6" }} className="font-medium">{positive} positive</span>
+                  <span style={{ color: "#475569" }} className="font-medium">{negative} negative</span>
+                </div>
+              </div>
+
+              <div className="flex-1" />
+
+              {/* Average rating + health badge */}
+              <div className="pt-2 border-t space-y-1.5">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Average Rating</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className="h-4 w-4"
+                        fill={star <= Math.round(avgRating) ? "#f59e0b" : "none"}
+                        stroke={star <= Math.round(avgRating) ? "#f59e0b" : "#d1d5db"}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-lg font-semibold">{avgRating.toFixed(1)}</span>
+                  <span className="text-xs text-muted-foreground">/ 5</span>
+                  {total > 0 && (
+                    <span className={`ml-1 px-3 py-1 rounded-full text-sm font-semibold ${health.className}`}>
+                      {health.label}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Top aspects */}
+              {aspectAnalytics && aspectAnalytics.aspects.length > 0 && (
+                <div className="pt-2 border-t space-y-2">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Top Aspects</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {aspectAnalytics.aspects
+                      .filter((a) => a.positive + a.negative + a.neutral > 0)
+                      .sort((a, b) => (b.positive + b.negative + b.neutral) - (a.positive + a.negative + a.neutral))
+                      .slice(0, 5)
+                      .map((a) => {
+                        const mentioned = a.positive + a.negative + a.neutral
+                        const dominant = a.positive >= a.negative ? "positive" : "negative"
+                        const style = dominant === "positive"
+                          ? "bg-teal-50 text-teal-700 border border-teal-200"
+                          : "bg-slate-100 text-slate-600 border border-slate-200"
+                        return (
+                          <span key={a.aspect} className={`text-xs font-medium px-2.5 py-1 rounded-full ${style}`}>
+                            {ASPECT_LABELS[a.aspect] ?? a.aspect}
+                            <span className="ml-1 opacity-60">{mentioned}</span>
+                          </span>
+                        )
+                      })}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Row 2: Top Rated + Most Reviewed */}
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* Top Rated Products */}
           <Card>
             <CardHeader>
@@ -130,13 +246,13 @@ export default function DashboardPage() {
                       href={`/products/${encodeURIComponent(product)}`}
                       className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors group"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--sentiment-positive-bg)] text-[var(--sentiment-positive)] font-semibold text-sm">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--sentiment-positive-bg)] text-[var(--sentiment-positive)] font-semibold text-sm">
                           {index + 1}
                         </div>
-                        <span className="font-medium group-hover:text-primary">{product}</span>
+                        <span className="font-medium group-hover:text-primary truncate">{product}</span>
                       </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                      <ArrowRight className="h-4 w-4 shrink-0 ml-2 text-muted-foreground group-hover:text-primary" />
                     </Link>
                   ))}
                 </div>
@@ -160,13 +276,13 @@ export default function DashboardPage() {
                       href={`/products/${encodeURIComponent(product)}`}
                       className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors group"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
                           {index + 1}
                         </div>
-                        <span className="font-medium group-hover:text-primary">{product}</span>
+                        <span className="font-medium group-hover:text-primary truncate">{product}</span>
                       </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                      <ArrowRight className="h-4 w-4 shrink-0 ml-2 text-muted-foreground group-hover:text-primary" />
                     </Link>
                   ))}
                 </div>

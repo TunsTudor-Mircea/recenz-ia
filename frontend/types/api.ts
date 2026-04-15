@@ -6,7 +6,8 @@ export interface Review {
   rating: 1 | 2 | 3 | 4 | 5
   sentiment_label: "positive" | "negative"
   sentiment_score: number
-  model_used: "robert" | "xgboost" | "svm"
+  model_used: "robert" | "xgboost" | "svm" | "lr" | "absa_xlmr" | "absa_robert" | "absa_mbert" | "absa_lr" | "absa_svm"
+  aspects?: Record<string, string> | null
   review_date: string
   created_at: string
 }
@@ -84,4 +85,19 @@ export interface PaginatedJobs {
   total: number
   page: number
   page_size: number
+}
+
+export interface AspectPolarityDistribution {
+  aspect: string
+  positive: number
+  negative: number
+  neutral: number
+  not_mentioned: number
+  total_reviews: number
+}
+
+export interface AspectAnalytics {
+  total_absa_reviews: number
+  aspects: AspectPolarityDistribution[]
+  mention_rate: Record<string, number>
 }

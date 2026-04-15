@@ -35,7 +35,7 @@ interface AddProductModalProps {
 export function AddProductModal({ onSuccess }: AddProductModalProps) {
   const [open, setOpen] = useState(false)
   const [url, setUrl] = useState("")
-  const [modelType, setModelType] = useState("robert")
+  const [modelType, setModelType] = useState("absa_xlmr")
   const [isLoading, setIsLoading] = useState(false)
   const [jobId, setJobId] = useState<string | null>(null)
   const { toast } = useToast()
@@ -164,20 +164,35 @@ export function AddProductModal({ onSuccess }: AddProductModalProps) {
                   <SelectValue placeholder="Select model" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="robert">RoBERT (Recommended - Most Accurate)</SelectItem>
-                  <SelectItem value="lr">Logistic Regression (Very Fast & Accurate)</SelectItem>
-                  <SelectItem value="xgboost">XGBoost (Fast)</SelectItem>
-                  <SelectItem value="svm">SVM (Fast - Baseline)</SelectItem>
+                  <SelectItem value="absa_xlmr">⭐ ABSA — XLM-RoBERTa (Best)</SelectItem>
+                  <SelectItem value="absa_robert">ABSA — Romanian BERT</SelectItem>
+                  <SelectItem value="absa_mbert">ABSA — Multilingual BERT</SelectItem>
+                  <SelectItem value="absa_lr">ABSA — Logistic Regression (Fast)</SelectItem>
+                  <SelectItem value="absa_svm">ABSA — SVM (Fast)</SelectItem>
+                  <SelectItem value="robert">Binary — RoBERT</SelectItem>
+                  <SelectItem value="lr">Binary — Logistic Regression</SelectItem>
+                  <SelectItem value="xgboost">Binary — XGBoost</SelectItem>
+                  <SelectItem value="svm">Binary — SVM</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {modelType === "robert"
-                  ? "RoBERT: Deep learning model optimized for Romanian text. Most accurate but slower."
+                {modelType === "absa_xlmr"
+                  ? "Aspect-Based Sentiment Analysis with XLM-RoBERTa — detects sentiment per aspect (battery, screen, price…). Best accuracy."
+                  : modelType === "absa_robert"
+                  ? "Aspect-Based Sentiment Analysis with Romanian BERT — fine-tuned on Romanian e-commerce reviews."
+                  : modelType === "absa_mbert"
+                  ? "Aspect-Based Sentiment Analysis with Multilingual BERT."
+                  : modelType === "absa_lr"
+                  ? "Aspect-Based Sentiment Analysis with Logistic Regression — fast, no GPU required."
+                  : modelType === "absa_svm"
+                  ? "Aspect-Based Sentiment Analysis with SVM — fast baseline, no GPU required."
+                  : modelType === "robert"
+                  ? "Binary sentiment only (positive/negative). RoBERT: deep learning model for Romanian."
                   : modelType === "lr"
-                  ? "Logistic Regression: Fast classical ML model with excellent accuracy (96.4%)."
+                  ? "Binary sentiment only. Logistic Regression: very fast classical ML."
                   : modelType === "xgboost"
-                  ? "XGBoost: Traditional ML model. Balanced speed and accuracy."
-                  : "SVM: Fast baseline model with good performance on clear sentiment."}
+                  ? "Binary sentiment only. XGBoost: balanced speed and accuracy."
+                  : "Binary sentiment only. SVM: fast baseline classifier."}
               </p>
             </div>
 

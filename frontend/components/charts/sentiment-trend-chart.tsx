@@ -1,6 +1,7 @@
 "use client"
 
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { useState, useEffect } from "react"
+import { CartesianGrid, Legend, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ProductTrend } from "@/types/api"
 
@@ -9,73 +10,45 @@ interface SentimentTrendChartProps {
 }
 
 export function SentimentTrendChart({ data }: SentimentTrendChartProps) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   const chartData = data.data_points.map((point) => ({
     date: new Date(point.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    sentiment: point.average_sentiment.toFixed(2),
-    rating: point.average_rating.toFixed(1),
+    sentiment: point.average_sentiment ? parseFloat(point.average_sentiment.toFixed(2)) : 0,
+    rating: point.average_rating ? parseFloat(point.average_rating.toFixed(1)) : 0,
     count: point.count,
   }))
 
   return (
-    <Card className="lg:col-span-2">
+    <Card>
       <CardHeader>
         <CardTitle>Sentiment Trend Over Time</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartData}>
+      <CardContent className="flex justify-center overflow-x-auto" style={{ minHeight: 200 }}>
+        {!mounted ? (
+          <div style={{ height: 280 }} />
+        ) : (
+          <LineChart width={350} height={280} data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
-            <XAxis
-              dataKey="date"
-              stroke="#6b7280"
-              tick={{ fill: "#374151" }}
-            />
-            <YAxis
-              yAxisId="left"
-              domain={[0, 1]}
-              stroke="#22c55e"
-              tick={{ fill: "#6b7280" }}
-            />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              domain={[0, 5]}
-              stroke="#f59e0b"
-              tick={{ fill: "#6b7280" }}
-            />
+            <XAxis dataKey="date" stroke="#6b7280" tick={{ fill: "#374151" }} />
+            <YAxis yAxisId="left" domain={[0, 1]} stroke="#22c55e" tick={{ fill: "#6b7280" }} />
+            <YAxis yAxisId="right" orientation="right" domain={[0, 5]} stroke="#f59e0b" tick={{ fill: "#6b7280" }} />
             <Tooltip
-              contentStyle={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px"
-              }}
+              contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px" }}
               labelStyle={{ color: "#111827" }}
             />
-            <Legend
-              wrapperStyle={{ color: "#111827" }}
+            <Legend wrapperStyle={{ color: "#111827" }} />
+            <Line
+              yAxisId="left" type="monotone" dataKey="sentiment" stroke="#22c55e" strokeWidth={3}
+              name="Sentiment Score" dot={{ fill: "#22c55e", strokeWidth: 2, r: 5 }} activeDot={{ r: 8 }}
             />
             <Line
-              yAxisId="left"
-              type="monotone"
-              dataKey="sentiment"
-              stroke="#22c55e"
-              strokeWidth={3}
-              name="Sentiment Score"
-              dot={{ fill: "#22c55e", strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, fill: "#22c55e" }}
-            />
-            <Line
-              yAxisId="right"
-              type="monotone"
-              dataKey="rating"
-              stroke="#f59e0b"
-              strokeWidth={3}
-              name="Average Rating"
-              dot={{ fill: "#f59e0b", strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, fill: "#f59e0b" }}
+              yAxisId="right" type="monotone" dataKey="rating" stroke="#f59e0b" strokeWidth={3}
+              name="Average Rating" dot={{ fill: "#f59e0b", strokeWidth: 2, r: 5 }} activeDot={{ r: 8 }}
             />
           </LineChart>
-        </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   )

@@ -1,9 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { StarRating } from "@/components/star-rating"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -16,7 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { MessageSquare, TrendingUp, Calendar, Trash2 } from "lucide-react"
+import { MessageSquare, Calendar, Trash2, TrendingUp } from "lucide-react"
 import type { SentimentDistribution } from "@/types/api"
 
 interface ProductCardProps {
@@ -36,89 +35,105 @@ export function ProductCard({
   lastUpdated,
   onDelete,
 }: ProductCardProps) {
-  const positivePercentage = Math.round((sentimentDistribution.positive / sentimentDistribution.total) * 100)
+  const positiveRate = sentimentDistribution.total > 0
+    ? Math.round((sentimentDistribution.positive / sentimentDistribution.total) * 100)
+    : 0
+  const negativeRate = 100 - positiveRate
 
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (onDelete) {
-      onDelete(name)
-    }
+    if (onDelete) onDelete(name)
   }
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 hover:border-primary/50 group h-full relative">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-2">
-          <Link href={`/products/${encodeURIComponent(name)}`} className="flex-1 min-w-0">
-            <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors">{name}</CardTitle>
-          </Link>
-          {onDelete && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+    <Card className="hover:shadow-md transition-all duration-200 hover:border-primary/40 group h-full flex flex-col">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2 px-5 pt-5 pb-3">
+        <Link href={`/products/${encodeURIComponent(name)}`} className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+            {name}
+          </h3>
+        </Link>
+        {onDelete && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0 -mt-0.5"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete "{name}"? This will permanently delete all {totalReviews} reviews for
+                  this product. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Product</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete "{name}"? This will permanently delete all {totalReviews} reviews for this product. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
-      </CardHeader>
-      <Link href={`/products/${encodeURIComponent(name)}`} className="block">
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <StarRating rating={averageRating} size={18} />
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+
+      <Link href={`/products/${encodeURIComponent(name)}`} className="flex flex-col flex-1">
+        <CardContent className="px-5 pb-5 flex flex-col flex-1 gap-3">
+          {/* Rating row */}
+          <div className="flex items-center gap-2">
+            <StarRating rating={averageRating} size={15} />
+            <span className="text-sm font-semibold">{averageRating.toFixed(1)}</span>
+            <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
+              <MessageSquare className="h-3.5 w-3.5" />
+              {totalReviews} reviews
+            </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-center">
-            <div className="p-2 rounded-lg bg-[var(--sentiment-positive-bg)]">
-              <div className="text-lg font-bold text-[var(--sentiment-positive)]">{sentimentDistribution.positive}</div>
-              <div className="text-xs text-muted-foreground">Positive</div>
+          {/* Sentiment bar */}
+          <div className="space-y-1.5">
+            <div className="flex h-2 w-full rounded-full overflow-hidden bg-muted">
+              <div
+                style={{ width: `${positiveRate}%`, backgroundColor: "#14b8a6", transition: "width 0.4s ease" }}
+              />
+              <div
+                style={{ width: `${negativeRate}%`, backgroundColor: "#f87171" }}
+              />
             </div>
-            <div className="p-2 rounded-lg bg-[var(--sentiment-negative-bg)]">
-              <div className="text-lg font-bold text-[var(--sentiment-negative)]">{sentimentDistribution.negative}</div>
-              <div className="text-xs text-muted-foreground">Negative</div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-teal-600 font-medium">{sentimentDistribution.positive} positive</span>
+              <span className="text-rose-400 font-medium">{sentimentDistribution.negative} negative</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">
-            <div className="flex items-center gap-1">
-              <MessageSquare className="h-4 w-4" />
-              <span>{totalReviews} reviews</span>
-            </div>
-            <Badge variant="outline" className="gap-1">
-              <TrendingUp className="h-3 w-3" />
-              {positivePercentage}%
-            </Badge>
-          </div>
+          {/* Spacer */}
+          <div className="flex-1" />
 
-          {lastUpdated && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Calendar className="h-3 w-3" />
-              <span>Updated {new Date(lastUpdated).toLocaleDateString()}</span>
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-3 border-t text-xs text-muted-foreground">
+            {lastUpdated ? (
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                <span>Updated {new Date(lastUpdated).toLocaleDateString()}</span>
+              </div>
+            ) : (
+              <span />
+            )}
+            <div className="flex items-center gap-1 font-semibold text-foreground">
+              <TrendingUp className="h-3.5 w-3.5 text-teal-500" />
+              {positiveRate}%
             </div>
-          )}
+          </div>
         </CardContent>
       </Link>
     </Card>
