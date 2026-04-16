@@ -12,28 +12,28 @@ env/
 frontend/.next/
 frontend/out/
 frontend/next-env.d.ts
-frontend/.env.local
-node_modules/
+frontend/.env.
 
-# Root-level Node artefacts
-package.json
-package-lock.json
-gen_model_training_doc.js
-
-# Python virtual environment
-backend/venv/
-
-# ── ABSA: trained model weights (too large for git, use git-lfs or external storage) ──
+# ABSA: trained model weights (too large for git; use external storage)
 absa/models/checkpoints/
 absa/models/baselines/lr_models.pkl
 absa/models/baselines/svm_models.pkl
 
-# ── ABSA: generated data splits (reproduced by running prepare_training_data.py) ──
+# ABSA: generated data splits (reproduced by running prepare_training_data.py)
 absa/data/splits/train.csv
 absa/data/splits/val.csv
 absa/data/splits/test_gold.csv
 
-# ── ABSA: intermediate annotation caches (large, reproducible from scripts) ──
+# ABSA: intermediate annotation caches (large; reproduced by annotation scripts)
 absa/data/llm_annotations.jsonl
 absa/data/nli_annotations.jsonl
 absa/data/bertopic_annotations.jsonl
+
+# Temporary generator scripts (used to produce docx, not source code)
+gen_dataset_doc.js
+gen_model_training_doc.js
+test_api.py
+
+node_modules/
+package-lock.json
+package.json
